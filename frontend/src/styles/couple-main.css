@@ -51,27 +51,23 @@
 
 .couple-col-left {
   background: linear-gradient(180deg, #f3deea, #e7edf9);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .couple-col-main {
   background: linear-gradient(180deg, #f7f8ff, #edf3ff);
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(70, 88, 134, 0.35) rgba(255, 255, 255, 0.35);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
+.couple-col-left::-webkit-scrollbar,
 .couple-col-main::-webkit-scrollbar {
-  width: 9px;
-}
-
-.couple-col-main::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.35);
-  border-radius: 999px;
-}
-
-.couple-col-main::-webkit-scrollbar-thumb {
-  background: rgba(70, 88, 134, 0.35);
-  border-radius: 999px;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .couple-col-right {
@@ -230,6 +226,16 @@
 .todo-list {
   display: grid;
   gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.todo-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .todo-item {
