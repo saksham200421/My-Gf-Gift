@@ -45,6 +45,12 @@ const coupleDashboardSchema = new mongoose.Schema(
       trim: true,
       maxlength: 220,
     },
+    wannaGoTo: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 220,
+    },
     highlightedDates: {
       type: [String],
       default: [],

@@ -121,3 +121,10 @@ export async function deleteDashboardTodo(token, todoId) {
     token,
   });
 }
+
+export async function searchPlace(token, query) {
+  return apiRequest(`/api/explore/place?query=${encodeURIComponent(query)}`, {
+    method: "GET",
+    token,
+  });
+}

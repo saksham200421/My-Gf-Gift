@@ -319,6 +319,55 @@
   color: var(--ink-900);
 }
 
+.love-game-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.love-game-msg {
+  font-size: 13px;
+}
+
+.love-game-canvas {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 42, 72, 0.14);
+}
+
+.love-game-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.love-game-controls span {
+  font-size: 13px;
+  color: var(--ink-700);
+}
+
+.place-result {
+  display: grid;
+  gap: 8px;
+}
+
+.place-image {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  object-fit: cover;
+  max-height: 180px;
+}
+
+.place-map {
+  width: 100%;
+  min-height: 190px;
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  border-radius: 10px;
+}
+
 @keyframes cardRiseIn {
   from {
     opacity: 0;

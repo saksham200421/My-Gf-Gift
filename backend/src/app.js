@@ -8,6 +8,7 @@ const healthRouter = require("./routes/health");
 const authRouter = require("./routes/auth");
 const lettersRouter = require("./routes/letters");
 const dashboardRouter = require("./routes/dashboard");
+const exploreRouter = require("./routes/explore");
 const { requireAuthForHtml } = require("./middleware/auth");
 
 const app = express();
@@ -44,5 +45,6 @@ app.use("/api", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/letters", lettersRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/explore", exploreRouter);
 
 module.exports = app;

@@ -3,10 +3,12 @@ import {
   addDashboardTodo,
   deleteDashboardTodo,
   fetchDashboard,
+  searchPlace,
   toggleDashboardDate,
   updateDashboardFields,
   updateDashboardTodo,
 } from "../utils/api";
+import LoveRunnerGame from "../components/LoveRunnerGame";
 
 const emptyDashboard = {
   eatToday: "",
@@ -18,6 +20,7 @@ const emptyDashboard = {
   gratitudeNote: "",
   datePlan: "",
   smallWin: "",
+  wannaGoTo: "",
   todos: [],
 };
 
@@ -51,6 +54,10 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [datePlanBudget, setDatePlanBudget] = useState("low");
   const [datePlanTime, setDatePlanTime] = useState("evening");
   const [winStars, setWinStars] = useState(3);
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [placeData, setPlaceData] = useState(null);
+  const [placeLoading, setPlaceLoading] = useState(false);
+  const [placeError, setPlaceError] = useState("");
 
   useEffect(() => {
     fetchDashboard(authToken)
@@ -182,6 +189,30 @@ function CoupleMain({ authToken, authUser, onLogout }) {
           `Game: ${gameFallbackPrompts[Math.floor(Math.random() * gameFallbackPrompts.length)]}`
         );
       });
+  };
+
+  const handleSearchPlace = async () => {
+    const query = placeQuery.trim() || dashboard.wannaGoTo?.trim();
+    if (!query) {
+      setPlaceError("Type a place first.");
+      return;
+    }
+
+    setPlaceLoading(true);
+    setPlaceError("");
+    try {
+      const payload = await searchPlace(authToken, query);
+      setPlaceData(payload.place || null);
+      if (dashboard.wannaGoTo !== query) {
+        setDashboard((prev) => ({ ...prev, wannaGoTo: query }));
+        await patchDashboard({ wannaGoTo: query });
+      }
+    } catch {
+      setPlaceData(null);
+      setPlaceError("Could not find this place right now.");
+    } finally {
+      setPlaceLoading(false);
+    }
   };
 
   return (
@@ -576,6 +607,72 @@ function CoupleMain({ authToken, authUser, onLogout }) {
           >
             New challenge
           </button>
+        </div>
+
+        <div className="couple-card">
+          <h3>2D Love Runner</h3>
+          <LoveRunnerGame />
+        </div>
+
+        <div className="couple-card">
+          <h3>Wanna go to</h3>
+          <div className="todo-input-row">
+            <input
+              value={placeQuery}
+              onChange={(event) => setPlaceQuery(event.target.value)}
+              onBlur={() => {
+                if (placeQuery.trim() && placeQuery.trim() !== dashboard.wannaGoTo) {
+                  setDashboard((prev) => ({ ...prev, wannaGoTo: placeQuery.trim() }));
+                  patchDashboard({ wannaGoTo: placeQuery.trim() });
+                }
+              }}
+              placeholder={dashboard.wannaGoTo || "Paris, Goa, Tokyo, Manali..."}
+            />
+            <button type="button" onClick={handleSearchPlace} disabled={placeLoading}>
+              {placeLoading ? "Searching..." : "Search"}
+            </button>
+          </div>
+
+          {placeError ? <p>{placeError}</p> : null}
+
+          {placeData ? (
+            <div className="place-result">
+              <p>
+                <strong>{placeData.name}</strong>
+              </p>
+              <p>{placeData.displayName}</p>
+              {placeData.description ? <p>{placeData.description}</p> : null}
+
+              {placeData.imageUrl ? (
+                <img src={placeData.imageUrl} alt={placeData.name} className="place-image" />
+              ) : null}
+
+              {placeData.mapEmbedUrl ? (
+                <iframe
+                  className="place-map"
+                  src={placeData.mapEmbedUrl}
+                  title={`Map for ${placeData.name}`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              ) : null}
+
+              <div className="chip-row">
+                {placeData.wikipediaUrl ? (
+                  <a className="chip-link" href={placeData.wikipediaUrl} target="_blank" rel="noreferrer">
+                    Learn more
+                  </a>
+                ) : null}
+                {placeData.mapStaticUrl ? (
+                  <a className="chip-link" href={placeData.mapStaticUrl} target="_blank" rel="noreferrer">
+                    Open static map
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <p>Search a destination to preview map + recognized place image.</p>
+          )}
         </div>
 
         <div className="couple-card">
