@@ -72,6 +72,15 @@
 
 .couple-col-right {
   background: linear-gradient(180deg, #e7eef8, #dee8f6);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.couple-col-right::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .couple-card {
@@ -425,6 +434,10 @@
   }
 
   .couple-col-main {
+    overflow: visible;
+  }
+
+  .couple-col-right {
     overflow: visible;
   }
 }
