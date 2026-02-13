@@ -8,6 +8,7 @@
 - Set env vars:
   - PORT=5000
   - FRONTEND_ORIGIN=https://your-frontend.vercel.app
+  - MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<database>?retryWrites=true&w=majority
 - Deploy and copy the Render URL.
 
 ### If Render asks for Dockerfile
