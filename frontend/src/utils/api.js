@@ -75,3 +75,49 @@ export async function createLetter(token, letter) {
     body: letter,
   });
 }
+
+export async function fetchDashboard(token) {
+  return apiRequest("/api/dashboard", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function updateDashboardFields(token, fields) {
+  return apiRequest("/api/dashboard", {
+    method: "PATCH",
+    token,
+    body: fields,
+  });
+}
+
+export async function toggleDashboardDate(token, dateKey) {
+  return apiRequest("/api/dashboard/highlighted-dates", {
+    method: "PATCH",
+    token,
+    body: { dateKey },
+  });
+}
+
+export async function addDashboardTodo(token, text) {
+  return apiRequest("/api/dashboard/todos", {
+    method: "POST",
+    token,
+    body: { text },
+  });
+}
+
+export async function updateDashboardTodo(token, todoId, updates) {
+  return apiRequest(`/api/dashboard/todos/${todoId}`, {
+    method: "PATCH",
+    token,
+    body: updates,
+  });
+}
+
+export async function deleteDashboardTodo(token, todoId) {
+  return apiRequest(`/api/dashboard/todos/${todoId}`, {
+    method: "DELETE",
+    token,
+  });
+}

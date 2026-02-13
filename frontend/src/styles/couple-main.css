@@ -1,0 +1,175 @@
+.couple-page {
+  height: calc(100vh - 24px);
+  margin: 12px;
+  display: grid;
+  grid-template-columns: 2fr 4fr 2fr;
+  gap: 10px;
+}
+
+.couple-col {
+  min-height: 0;
+  border-radius: 16px;
+  padding: 10px;
+  border: 1px solid rgba(28, 42, 72, 0.12);
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.couple-col-left {
+  background: linear-gradient(180deg, #f3deea, #e7edf9);
+}
+
+.couple-col-main {
+  background: linear-gradient(180deg, #f7f8ff, #edf3ff);
+  overflow-y: auto;
+}
+
+.couple-col-right {
+  background: linear-gradient(180deg, #e7eef8, #dee8f6);
+}
+
+.couple-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.couple-card h2,
+.couple-card h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink-900);
+}
+
+.couple-card p {
+  margin: 0;
+  color: var(--ink-700);
+  line-height: 1.45;
+}
+
+.couple-card input,
+.couple-card textarea,
+.couple-card button {
+  font: inherit;
+}
+
+.couple-card input,
+.couple-card textarea {
+  border: 1px solid rgba(31, 42, 72, 0.14);
+  background: #fff;
+  border-radius: 10px;
+  padding: 9px;
+  color: var(--ink-900);
+}
+
+.couple-card textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+
+.couple-card button {
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  background: #fff;
+  color: var(--ink-900);
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendar-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendar-label {
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-600);
+  font-weight: 600;
+}
+
+.calendar-cell {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.calendar-cell.empty {
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.calendar-cell.highlighted {
+  background: linear-gradient(130deg, #df8fb4, #96afe7);
+  color: #fff;
+  border-color: transparent;
+}
+
+.todo-input-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.todo-list {
+  display: grid;
+  gap: 7px;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.todo-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.todo-done {
+  text-decoration: line-through;
+  color: var(--ink-500);
+}
+
+.saving-text {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 1100px) {
+  .couple-page {
+    height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .couple-col-main {
+    overflow: visible;
+  }
+}

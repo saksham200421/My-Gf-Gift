@@ -1,7 +1,7 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import { useMemo, useState } from "react";
-import Home from "./pages/Home";
+import CoupleMain from "./pages/CoupleMain";
 import Hub from "./pages/Hub";
 import Letters from "./pages/Letters";
 import Login from "./pages/Login";
@@ -48,7 +48,7 @@ function App() {
           <Route
             path="/"
             element={
-              <Home
+              <CoupleMain
                 authToken={authToken}
                 authUser={authUser}
                 onLogout={handleLogout}

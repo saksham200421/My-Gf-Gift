@@ -9,12 +9,48 @@ const initialForm = {
   password: "",
 };
 
+const loginGradientOptions = {
+  roseSky: [
+    ["#f7d4df", "#d8e0ff", "#cfe1ff"],
+    ["#efbccd", "#c1cdf7", "#b8d0f8"],
+    ["#e59fb6", "#aebeea", "#a1c0ef"],
+    ["#d984a1", "#9cacde", "#8eb2e6"],
+    ["#c66e90", "#8b9bd3", "#7ba5dd"],
+  ],
+  sunsetLilac: [
+    ["#f8d6cf", "#ead5f8", "#d5dffd"],
+    ["#f0b8ac", "#d9bcf2", "#bdcdf8"],
+    ["#e39e90", "#c8a9ea", "#a9bdf0"],
+    ["#d08979", "#b594df", "#95ade8"],
+    ["#bb7565", "#a27fd3", "#829de0"],
+  ],
+  berryTwilight: [
+    ["#ecc5dd", "#d5c8f6", "#c5d9ff"],
+    ["#dfa9cb", "#c2b4ec", "#b0c8f8"],
+    ["#cf8cb7", "#b09fe0", "#9ab6ef"],
+    ["#bd75a4", "#9d8bd3", "#86a5e6"],
+    ["#ab6291", "#8b79c6", "#7396dc"],
+  ],
+  oceanDusk: [
+    ["#c8d9f2", "#c2d5ec", "#bcd0e6"],
+    ["#adc6e5", "#a8c1de", "#a2bad8"],
+    ["#92b3d8", "#8daed0", "#88a8ca"],
+    ["#7aa1cb", "#769bc3", "#7196bd"],
+    ["#678fbc", "#6389b3", "#5f84ad"],
+  ],
+};
+
 function Login({ onAuthenticated, isAuthenticated }) {
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [bursts, setBursts] = useState([]);
+  const [gradientOption, setGradientOption] = useState("roseSky");
+  const [gradientShade, setGradientShade] = useState(3);
+
+  const [gradientStart, gradientMiddle, gradientEnd] =
+    loginGradientOptions[gradientOption][gradientShade - 1];
 
   const heading = useMemo(
     () =>
@@ -65,7 +101,14 @@ function Login({ onAuthenticated, isAuthenticated }) {
   }
 
   return (
-    <main className="login-page">
+    <main
+      className="login-page"
+      style={{
+        "--login-bg-start": gradientStart,
+        "--login-bg-middle": gradientMiddle,
+        "--login-bg-end": gradientEnd,
+      }}
+    >
       <div className="login-bg-hearts" aria-hidden="true">
         {Array.from({ length: 18 }).map((_, index) => (
           <span key={index} className="login-floating-heart" />
@@ -77,6 +120,34 @@ function Login({ onAuthenticated, isAuthenticated }) {
             style={{ left: `${burst.x}px`, top: `${burst.y}px` }}
           />
         ))}
+      </div>
+
+      <div className="login-gradient-tester">
+        <span className="login-gradient-tester-label">Temporary Gradient Tester</span>
+        <div className="login-gradient-tester-controls">
+          <select
+            value={gradientOption}
+            onChange={(event) => setGradientOption(event.target.value)}
+            className="login-gradient-select"
+          >
+            <option value="roseSky">Option 1: Rose Sky</option>
+            <option value="sunsetLilac">Option 2: Sunset Lilac</option>
+            <option value="berryTwilight">Option 3: Berry Twilight</option>
+            <option value="oceanDusk">Option 4: Ocean Dusk</option>
+          </select>
+
+          <select
+            value={gradientShade}
+            onChange={(event) => setGradientShade(Number(event.target.value))}
+            className="login-gradient-select"
+          >
+            <option value={1}>Shade 1 (light)</option>
+            <option value={2}>Shade 2</option>
+            <option value={3}>Shade 3</option>
+            <option value={4}>Shade 4</option>
+            <option value={5}>Shade 5 (dark)</option>
+          </select>
+        </div>
       </div>
 
       <section className="login-card">
