@@ -21,6 +21,46 @@ const emptyDashboard = {
   todos: [],
 };
 
+const moodQuickPicks = ["Happy", "Calm", "Chaotic", "Sleepy", "Romantic"];
+const foodQuickPicks = ["Pizza", "Pasta", "Biryani", "Sushi", "Maggi"];
+const songQuickPicks = [
+  "Perfect - Ed Sheeran",
+  "Until I Found You",
+  "A Thousand Years",
+  "I Like Me Better",
+];
+
+const dashboardThemes = {
+  roseSky: [
+    ["#f7d4df", "#d8e0ff", "#cfe1ff", "#d3749d"],
+    ["#efbccd", "#c1cdf7", "#b8d0f8", "#c8628d"],
+    ["#e59fb6", "#aebeea", "#a1c0ef", "#b95580"],
+    ["#d984a1", "#9cacde", "#8eb2e6", "#a94972"],
+    ["#c66e90", "#8b9bd3", "#7ba5dd", "#963f66"],
+  ],
+  sunsetLilac: [
+    ["#f8d6cf", "#ead5f8", "#d5dffd", "#c67788"],
+    ["#f0b8ac", "#d9bcf2", "#bdcdf8", "#b9677c"],
+    ["#e39e90", "#c8a9ea", "#a9bdf0", "#aa5a73"],
+    ["#d08979", "#b594df", "#95ade8", "#994f6a"],
+    ["#bb7565", "#a27fd3", "#829de0", "#88455f"],
+  ],
+  berryTwilight: [
+    ["#ecc5dd", "#d5c8f6", "#c5d9ff", "#9f5ea2"],
+    ["#dfa9cb", "#c2b4ec", "#b0c8f8", "#915196"],
+    ["#cf8cb7", "#b09fe0", "#9ab6ef", "#82458a"],
+    ["#bd75a4", "#9d8bd3", "#86a5e6", "#743b7d"],
+    ["#ab6291", "#8b79c6", "#7396dc", "#653372"],
+  ],
+  oceanDusk: [
+    ["#c8d9f2", "#c2d5ec", "#bcd0e6", "#456e9d"],
+    ["#adc6e5", "#a8c1de", "#a2bad8", "#3e638f"],
+    ["#92b3d8", "#8daed0", "#88a8ca", "#375781"],
+    ["#7aa1cb", "#769bc3", "#7196bd", "#304c73"],
+    ["#678fbc", "#6389b3", "#5f84ad", "#2a4266"],
+  ],
+};
+
 function CoupleMain({ authToken, authUser, onLogout }) {
   const [dashboard, setDashboard] = useState(emptyDashboard);
   const [monthDate, setMonthDate] = useState(() => {
@@ -30,6 +70,12 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [newTodo, setNewTodo] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [gamePrompt, setGamePrompt] = useState("Loading a couple mini-game...");
+  const [themeOption, setThemeOption] = useState("roseSky");
+  const [themeShade, setThemeShade] = useState(3);
+  const [dateIdea, setDateIdea] = useState("");
+
+  const [themeStart, themeMiddle, themeEnd, themeAccent] =
+    dashboardThemes[themeOption][themeShade - 1];
 
   useEffect(() => {
     fetchDashboard(authToken)
@@ -109,47 +155,31 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     setDashboard(payload.dashboard || emptyDashboard);
   };
 
+  const completedTodos = dashboard.todos.filter((todo) => todo.done).length;
+  const todoProgress = dashboard.todos.length
+    ? Math.round((completedTodos / dashboard.todos.length) * 100)
+    : 0;
+
+  const clearCompletedTodos = async () => {
+    const completed = dashboard.todos.filter((todo) => todo.done);
+    for (const todo of completed) {
+      await deleteDashboardTodo(authToken, todo.id);
+    }
+    const payload = await fetchDashboard(authToken);
+    setDashboard(payload.dashboard || emptyDashboard);
+  };
+
   return (
-    <main className="couple-page">
+    <main
+      className="couple-page"
+      style={{
+        "--couple-bg-start": themeStart,
+        "--couple-bg-middle": themeMiddle,
+        "--couple-bg-end": themeEnd,
+        "--couple-accent": themeAccent,
+      }}
+    >
       <section className="couple-col couple-col-left">
-        <div className="couple-card">
-          <h3>Wanna eat this ___ today?</h3>
-          <input
-            value={dashboard.eatToday}
-            onChange={(event) =>
-              setDashboard((prev) => ({ ...prev, eatToday: event.target.value }))
-            }
-            onBlur={() => patchDashboard({ eatToday: dashboard.eatToday })}
-            placeholder="Sushi / Pasta / Chaat"
-          />
-        </div>
-
-        <div className="couple-card">
-          <h3>Today’s mood</h3>
-          <input
-            value={dashboard.moodToday}
-            onChange={(event) =>
-              setDashboard((prev) => ({ ...prev, moodToday: event.target.value }))
-            }
-            onBlur={() => patchDashboard({ moodToday: dashboard.moodToday })}
-            placeholder="Soft / Silly / Moody"
-          />
-        </div>
-
-        <div className="couple-card">
-          <h3>Song selection area</h3>
-          <input
-            value={dashboard.songPick}
-            onChange={(event) =>
-              setDashboard((prev) => ({ ...prev, songPick: event.target.value }))
-            }
-            onBlur={() => patchDashboard({ songPick: dashboard.songPick })}
-            placeholder="Song title or link"
-          />
-        </div>
-      </section>
-
-      <section className="couple-col couple-col-main">
         <div className="couple-card">
           <div className="calendar-head">
             <h2>
@@ -205,7 +235,90 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         </div>
 
         <div className="couple-card">
+          <h3>Wanna eat this ___ today?</h3>
+          <input
+            value={dashboard.eatToday}
+            onChange={(event) =>
+              setDashboard((prev) => ({ ...prev, eatToday: event.target.value }))
+            }
+            onBlur={() => patchDashboard({ eatToday: dashboard.eatToday })}
+            placeholder="Sushi / Pasta / Chaat"
+          />
+          <div className="chip-row">
+            {foodQuickPicks.map((food) => (
+              <button
+                key={food}
+                type="button"
+                onClick={() => {
+                  setDashboard((prev) => ({ ...prev, eatToday: food }));
+                  patchDashboard({ eatToday: food });
+                }}
+              >
+                {food}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="couple-card">
+          <h3>Today’s mood</h3>
+          <input
+            value={dashboard.moodToday}
+            onChange={(event) =>
+              setDashboard((prev) => ({ ...prev, moodToday: event.target.value }))
+            }
+            onBlur={() => patchDashboard({ moodToday: dashboard.moodToday })}
+            placeholder="Soft / Silly / Moody"
+          />
+          <div className="chip-row">
+            {moodQuickPicks.map((mood) => (
+              <button
+                key={mood}
+                type="button"
+                onClick={() => {
+                  setDashboard((prev) => ({ ...prev, moodToday: mood }));
+                  patchDashboard({ moodToday: mood });
+                }}
+              >
+                {mood}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="couple-card">
+          <h3>Song selection area</h3>
+          <input
+            value={dashboard.songPick}
+            onChange={(event) =>
+              setDashboard((prev) => ({ ...prev, songPick: event.target.value }))
+            }
+            onBlur={() => patchDashboard({ songPick: dashboard.songPick })}
+            placeholder="Song title or link"
+          />
+          <div className="chip-row">
+            {songQuickPicks.map((song) => (
+              <button
+                key={song}
+                type="button"
+                onClick={() => {
+                  setDashboard((prev) => ({ ...prev, songPick: song }));
+                  patchDashboard({ songPick: song });
+                }}
+              >
+                {song}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="couple-col couple-col-main">
+        <div className="couple-card">
           <h2>To-do list system</h2>
+          <p>
+            Progress: {completedTodos}/{dashboard.todos.length} ({todoProgress}%)
+          </p>
           <div className="todo-input-row">
             <input
               value={newTodo}
@@ -216,6 +329,9 @@ function CoupleMain({ authToken, authUser, onLogout }) {
               Add
             </button>
           </div>
+          <button type="button" onClick={clearCompletedTodos} disabled={!completedTodos}>
+            Clear completed
+          </button>
           <div className="todo-list">
             {dashboard.todos.map((todo) => (
               <div key={todo.id} className="todo-item">
@@ -245,6 +361,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             onBlur={() => patchDashboard({ thoughtToday: dashboard.thoughtToday })}
             placeholder="What are you thinking today?"
           />
+          <p>Word count: {dashboard.thoughtToday.trim() ? dashboard.thoughtToday.trim().split(/\s+/).length : 0}</p>
         </div>
 
         <div className="couple-card">
@@ -257,6 +374,16 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             onBlur={() => patchDashboard({ madReason: dashboard.madReason })}
             placeholder="Tiny rant space"
           />
+          <button
+            type="button"
+            onClick={() => {
+              const calmLine = "I still care, I just need a hug and 5 minutes.";
+              setDashboard((prev) => ({ ...prev, madReason: calmLine }));
+              patchDashboard({ madReason: calmLine });
+            }}
+          >
+            Replace with calm version
+          </button>
         </div>
 
         <div className="couple-card">
@@ -269,6 +396,16 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             onBlur={() => patchDashboard({ gratitudeNote: dashboard.gratitudeNote })}
             placeholder="Write something sweet"
           />
+          <button
+            type="button"
+            onClick={() => {
+              const prompt = "You made today lighter just by being you.";
+              setDashboard((prev) => ({ ...prev, gratitudeNote: prompt }));
+              patchDashboard({ gratitudeNote: prompt });
+            }}
+          >
+            Use sweet prompt
+          </button>
         </div>
 
         <div className="couple-card">
@@ -281,6 +418,17 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             onBlur={() => patchDashboard({ datePlan: dashboard.datePlan })}
             placeholder="What shall we do next?"
           />
+          <button
+            type="button"
+            onClick={() => {
+              setDateIdea("Walk + coffee + sunset photos");
+              setDashboard((prev) => ({ ...prev, datePlan: "Walk + coffee + sunset photos" }));
+              patchDashboard({ datePlan: "Walk + coffee + sunset photos" });
+            }}
+          >
+            Generate quick idea
+          </button>
+          {dateIdea ? <p>Idea picked: {dateIdea}</p> : null}
         </div>
 
         <div className="couple-card">
@@ -293,10 +441,42 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             onBlur={() => patchDashboard({ smallWin: dashboard.smallWin })}
             placeholder="Celebrate something little"
           />
+          <button
+            type="button"
+            onClick={() => {
+              const win = "We showed up for each other today.";
+              setDashboard((prev) => ({ ...prev, smallWin: win }));
+              patchDashboard({ smallWin: win });
+            }}
+          >
+            Suggest a win
+          </button>
         </div>
       </section>
 
       <section className="couple-col couple-col-right">
+        <div className="couple-card">
+          <h3>Theme option</h3>
+          <div className="theme-controls">
+            <select value={themeOption} onChange={(event) => setThemeOption(event.target.value)}>
+              <option value="roseSky">Option 1: Rose Sky</option>
+              <option value="sunsetLilac">Option 2: Sunset Lilac</option>
+              <option value="berryTwilight">Option 3: Berry Twilight</option>
+              <option value="oceanDusk">Option 4: Ocean Dusk</option>
+            </select>
+            <select
+              value={themeShade}
+              onChange={(event) => setThemeShade(Number(event.target.value))}
+            >
+              <option value={1}>Shade 1 (light)</option>
+              <option value={2}>Shade 2</option>
+              <option value={3}>Shade 3</option>
+              <option value={4}>Shade 4</option>
+              <option value={5}>Shade 5 (dark)</option>
+            </select>
+          </div>
+        </div>
+
         <div className="couple-card">
           <h3>Couple Game</h3>
           <p>{gamePrompt}</p>
