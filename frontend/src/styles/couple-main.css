@@ -4,6 +4,37 @@
   display: grid;
   grid-template-columns: 2fr 4fr 2fr;
   gap: 14px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.couple-page::before,
+.couple-page::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(30px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.couple-page::before {
+  width: 320px;
+  height: 320px;
+  top: -100px;
+  left: -60px;
+  background: rgba(221, 143, 180, 0.32);
+  animation: orbitGlowA 10s ease-in-out infinite;
+}
+
+.couple-page::after {
+  width: 360px;
+  height: 360px;
+  right: -80px;
+  bottom: -120px;
+  background: rgba(138, 170, 230, 0.28);
+  animation: orbitGlowB 12s ease-in-out infinite;
 }
 
 .couple-col {
@@ -14,6 +45,8 @@
   display: grid;
   gap: 14px;
   align-content: start;
+  backdrop-filter: blur(4px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .couple-col-left {
@@ -23,6 +56,22 @@
 .couple-col-main {
   background: linear-gradient(180deg, #f7f8ff, #edf3ff);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(70, 88, 134, 0.35) rgba(255, 255, 255, 0.35);
+}
+
+.couple-col-main::-webkit-scrollbar {
+  width: 9px;
+}
+
+.couple-col-main::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.couple-col-main::-webkit-scrollbar-thumb {
+  background: rgba(70, 88, 134, 0.35);
+  border-radius: 999px;
 }
 
 .couple-col-right {
@@ -37,6 +86,26 @@
   display: grid;
   gap: 10px;
   box-shadow: 0 10px 18px rgba(31, 42, 72, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  animation: cardRiseIn 0.45s ease both;
+}
+
+.couple-card:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.couple-card:nth-child(3) {
+  animation-delay: 0.08s;
+}
+
+.couple-card:nth-child(4) {
+  animation-delay: 0.12s;
+}
+
+.couple-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 24px rgba(31, 42, 72, 0.14);
+  border-color: rgba(31, 42, 72, 0.2);
 }
 
 .couple-card h2,
@@ -65,6 +134,16 @@
   border-radius: 10px;
   padding: 9px;
   color: var(--ink-900);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.couple-card input:focus,
+.couple-card textarea:focus,
+.inline-label select:focus,
+.inline-actions select:focus {
+  outline: none;
+  border-color: rgba(126, 88, 150, 0.45);
+  box-shadow: 0 0 0 3px rgba(147, 112, 177, 0.16);
 }
 
 .couple-card textarea {
@@ -85,6 +164,10 @@
 .couple-card button:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 14px rgba(31, 42, 72, 0.12);
+}
+
+.couple-card button:active {
+  transform: translateY(0);
 }
 
 .calendar-head {
@@ -117,6 +200,12 @@
   border: 1px solid rgba(31, 42, 72, 0.12);
   background: #fff;
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.calendar-cell:hover:not(.empty) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 10px rgba(31, 42, 72, 0.12);
 }
 
 .calendar-cell.empty {
@@ -129,6 +218,7 @@
   background: linear-gradient(130deg, #df8fb4, #96afe7);
   color: #fff;
   border-color: transparent;
+  animation: popIn 0.2s ease;
 }
 
 .todo-input-row {
@@ -151,6 +241,12 @@
   border: 1px solid rgba(31, 42, 72, 0.12);
   border-radius: 10px;
   padding: 10px;
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.todo-item:hover {
+  transform: translateY(-1px);
+  background: #fff;
 }
 
 .todo-item label {
@@ -162,6 +258,7 @@
 .todo-done {
   text-decoration: line-through;
   color: var(--ink-500);
+  opacity: 0.75;
 }
 
 .saving-text {
@@ -185,6 +282,14 @@
   background: rgba(255, 255, 255, 0.9);
   text-decoration: none;
   color: var(--ink-800);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s ease;
+}
+
+.chip-row button:hover,
+.chip-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(31, 42, 72, 0.25);
+  box-shadow: 0 5px 10px rgba(31, 42, 72, 0.1);
 }
 
 .inline-actions {
@@ -214,10 +319,51 @@
   color: var(--ink-900);
 }
 
+@keyframes cardRiseIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.96);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes orbitGlowA {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(28px, 14px);
+  }
+}
+
+@keyframes orbitGlowB {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-22px, -16px);
+  }
+}
+
 @media (max-width: 1100px) {
   .couple-page {
     height: auto;
     grid-template-columns: 1fr;
+    overflow: visible;
   }
 
   .couple-col-main {
