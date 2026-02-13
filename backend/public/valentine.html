@@ -40,6 +40,16 @@
           radial-gradient(circle at 52% 40%, rgba(255, 255, 255, 0.45) 0 8%, transparent 9%),
           radial-gradient(circle at 42% 62%, rgba(255, 255, 255, 0.45) 0 8%, transparent 9%),
           linear-gradient(160deg, #ffe6ef 0%, #f4f1ff 55%, #e7f1ff 100%);
+        overflow: hidden;
+      }
+
+      .hearts-bg {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
       }
 
       .wrap {
@@ -49,6 +59,8 @@
         place-items: center;
         text-align: center;
         padding: 32px 16px;
+        position: relative;
+        z-index: 1;
       }
 
       .audio-toggle {
@@ -169,6 +181,7 @@
     </style>
   </head>
   <body>
+    <canvas class="hearts-bg" id="hearts-bg" aria-hidden="true"></canvas>
     <audio id="bg-audio" autoplay loop>
       <source src="FILL_IN_SONG_FILE.mp3" type="audio/mpeg" />
     </audio>
@@ -193,7 +206,184 @@
       const yesButton = document.getElementById("yes");
       const audio = document.getElementById("bg-audio");
       const audioToggle = document.getElementById("audio-toggle");
+      const heartsCanvas = document.getElementById("hearts-bg");
+      const heartsCtx = heartsCanvas.getContext("2d");
       let lastMove = 0;
+      const fallingHearts = [];
+      const shootingHearts = [];
+      const heartPalette = [
+        "#ff5ea8",
+        "#ff7fb0",
+        "#ff9ec7",
+        "#ff6f91",
+        "#ff9671",
+        "#f38fff",
+        "#9db8ff",
+        "#7fd8ff",
+        "#b8ff9d",
+        "#ffd86b",
+      ];
+
+      let viewportWidth = window.innerWidth;
+      let viewportHeight = window.innerHeight;
+      let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const pickHeartColor = () => {
+        if (Math.random() < 0.6) {
+          return heartPalette[Math.floor(Math.random() * heartPalette.length)];
+        }
+        const hue = Math.floor(Math.random() * 360);
+        const sat = 75 + Math.floor(Math.random() * 20);
+        const light = 60 + Math.floor(Math.random() * 15);
+        return `hsl(${hue} ${sat}% ${light}%)`;
+      };
+
+      const resizeHeartsCanvas = () => {
+        viewportWidth = window.innerWidth;
+        viewportHeight = window.innerHeight;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        heartsCanvas.width = Math.floor(viewportWidth * dpr);
+        heartsCanvas.height = Math.floor(viewportHeight * dpr);
+        heartsCanvas.style.width = `${viewportWidth}px`;
+        heartsCanvas.style.height = `${viewportHeight}px`;
+        heartsCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      };
+
+      const createFallingHeart = () => {
+        fallingHearts.push({
+          x: Math.random() * viewportWidth,
+          y: -30 - Math.random() * 100,
+          size: 8 + Math.random() * 16,
+          vx: -0.6 + Math.random() * 1.2,
+          vy: 0.8 + Math.random() * 1.7,
+          rotation: Math.random() * Math.PI * 2,
+          vr: (-0.02 + Math.random() * 0.04),
+          alpha: 0.55 + Math.random() * 0.35,
+          color: pickHeartColor(),
+        });
+      };
+
+      const createShootingHeart = () => {
+        const fromLeft = Math.random() > 0.5;
+        shootingHearts.push({
+          x: fromLeft ? -40 : viewportWidth + 40,
+          y: viewportHeight * (0.45 + Math.random() * 0.45),
+          size: 10 + Math.random() * 12,
+          vx: fromLeft ? 3 + Math.random() * 3 : -3 - Math.random() * 3,
+          vy: -4.8 - Math.random() * 2.5,
+          gravity: 0.035 + Math.random() * 0.02,
+          rotation: Math.random() * Math.PI * 2,
+          vr: -0.05 + Math.random() * 0.1,
+          alpha: 0.75 + Math.random() * 0.2,
+          color: pickHeartColor(),
+          life: 0,
+          maxLife: 170 + Math.random() * 80,
+        });
+      };
+
+      const drawHeart = (x, y, size, color, alpha, rotation) => {
+        heartsCtx.save();
+        heartsCtx.translate(x, y);
+        heartsCtx.rotate(rotation);
+        heartsCtx.scale(size / 20, size / 20);
+        heartsCtx.globalAlpha = alpha;
+        heartsCtx.fillStyle = color;
+        heartsCtx.beginPath();
+        heartsCtx.moveTo(0, 6);
+        heartsCtx.bezierCurveTo(0, -4, -12, -7, -12, 3);
+        heartsCtx.bezierCurveTo(-12, 10, -5, 14, 0, 19);
+        heartsCtx.bezierCurveTo(5, 14, 12, 10, 12, 3);
+        heartsCtx.bezierCurveTo(12, -7, 0, -4, 0, 6);
+        heartsCtx.closePath();
+        heartsCtx.fill();
+        heartsCtx.restore();
+      };
+
+      const drawShootingTrail = (heart) => {
+        heartsCtx.save();
+        heartsCtx.globalAlpha = Math.max(0.12, heart.alpha * 0.25);
+        heartsCtx.strokeStyle = heart.color;
+        heartsCtx.lineWidth = Math.max(1, heart.size * 0.18);
+        heartsCtx.lineCap = "round";
+        heartsCtx.beginPath();
+        heartsCtx.moveTo(heart.x, heart.y);
+        heartsCtx.lineTo(heart.x - heart.vx * 5, heart.y - heart.vy * 5);
+        heartsCtx.stroke();
+        heartsCtx.restore();
+      };
+
+      let lastFrame = performance.now();
+      let fallSpawnTimer = 0;
+      let shootSpawnTimer = 0;
+
+      const animateHearts = (time) => {
+        const delta = Math.min(33, time - lastFrame);
+        lastFrame = time;
+
+        heartsCtx.clearRect(0, 0, viewportWidth, viewportHeight);
+
+        fallSpawnTimer += delta;
+        shootSpawnTimer += delta;
+
+        while (fallSpawnTimer > 110) {
+          fallSpawnTimer -= 110;
+          createFallingHeart();
+        }
+
+        if (shootSpawnTimer > 650 + Math.random() * 450) {
+          shootSpawnTimer = 0;
+          createShootingHeart();
+        }
+
+        for (let i = fallingHearts.length - 1; i >= 0; i -= 1) {
+          const heart = fallingHearts[i];
+          heart.x += heart.vx * (delta / 16.67);
+          heart.y += heart.vy * (delta / 16.67);
+          heart.rotation += heart.vr * (delta / 16.67);
+
+          drawHeart(heart.x, heart.y, heart.size, heart.color, heart.alpha, heart.rotation);
+
+          if (
+            heart.y > viewportHeight + 40 ||
+            heart.x < -50 ||
+            heart.x > viewportWidth + 50
+          ) {
+            fallingHearts.splice(i, 1);
+          }
+        }
+
+        for (let i = shootingHearts.length - 1; i >= 0; i -= 1) {
+          const heart = shootingHearts[i];
+          heart.life += delta;
+          heart.vy += heart.gravity * (delta / 16.67);
+          heart.x += heart.vx * (delta / 16.67);
+          heart.y += heart.vy * (delta / 16.67);
+          heart.rotation += heart.vr * (delta / 16.67);
+          heart.alpha = Math.max(0, 1 - heart.life / heart.maxLife);
+
+          drawShootingTrail(heart);
+          drawHeart(
+            heart.x,
+            heart.y,
+            heart.size,
+            heart.color,
+            heart.alpha,
+            heart.rotation
+          );
+
+          if (
+            heart.life >= heart.maxLife ||
+            heart.y > viewportHeight + 60 ||
+            heart.x < -80 ||
+            heart.x > viewportWidth + 80
+          ) {
+            shootingHearts.splice(i, 1);
+          }
+        }
+
+        window.requestAnimationFrame(animateHearts);
+      };
 
       const positionNoRightOfYes = () => {
         const yesRect = yesButton.getBoundingClientRect();
@@ -255,10 +445,19 @@
         audioToggle.textContent = audio.muted ? "Unmute" : "Mute";
       });
 
-      window.addEventListener("resize", positionNoRightOfYes);
+      window.addEventListener("resize", () => {
+        positionNoRightOfYes();
+        resizeHeartsCanvas();
+      });
       window.requestAnimationFrame(() => {
         positionNoRightOfYes();
       });
+
+      resizeHeartsCanvas();
+      for (let i = 0; i < 24; i += 1) {
+        createFallingHeart();
+      }
+      window.requestAnimationFrame(animateHearts);
     </script>
   </body>
 </html>
