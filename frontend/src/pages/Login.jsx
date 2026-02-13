@@ -4,6 +4,7 @@ import { loginUser, registerUser } from "../utils/api";
 
 const initialForm = {
   name: "",
+  username: "",
   email: "",
   password: "",
 };
@@ -48,7 +49,7 @@ function Login({ onAuthenticated, isAuthenticated }) {
     try {
       const payload =
         mode === "login"
-          ? await loginUser({ email: form.email, password: form.password })
+          ? await loginUser({ username: form.username, password: form.password })
           : await registerUser(form);
 
       onAuthenticated(payload.token, payload.user);
@@ -99,17 +100,31 @@ function Login({ onAuthenticated, isAuthenticated }) {
             </label>
           )}
 
-          <label>
-            Email
-            <input
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              required
-            />
-          </label>
+          {mode === "login" ? (
+            <label>
+              Username
+              <input
+                name="username"
+                type="text"
+                value={form.username}
+                onChange={handleChange}
+                placeholder="SAM Sam"
+                required
+              />
+            </label>
+          ) : (
+            <label>
+              Email
+              <input
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                required
+              />
+            </label>
+          )}
 
           <label>
             Password

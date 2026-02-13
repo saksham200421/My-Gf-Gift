@@ -47,10 +47,10 @@ export async function registerUser({ name, email, password }) {
   });
 }
 
-export async function loginUser({ email, password }) {
+export async function loginUser({ username, password }) {
   return apiRequest("/api/auth/login", {
     method: "POST",
-    body: { email, password },
+    body: { username, password },
   });
 }
 

@@ -12,6 +12,10 @@ function sanitizeUser(user) {
   };
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 async function register(req, res) {
   const { name, email, password } = req.body || {};
 
@@ -55,23 +59,28 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
-  const { email, password } = req.body || {};
+  const { username, password } = req.body || {};
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+  if (!username || !password) {
+    return res.status(400).json({ message: "Username and password are required" });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const user = await User.findOne({ email: normalizedEmail });
+  const normalizedUsername = username.trim();
+  const user = await User.findOne({
+    name: {
+      $regex: `^${escapeRegex(normalizedUsername)}$`,
+      $options: "i",
+    },
+  });
 
   if (!user) {
-    return res.status(401).json({ message: "Invalid email or password" });
+    return res.status(401).json({ message: "Invalid username or password" });
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
   if (!isPasswordValid) {
-    return res.status(401).json({ message: "Invalid email or password" });
+    return res.status(401).json({ message: "Invalid username or password" });
   }
 
   const token = signAuthToken({ userId: user._id.toString(), email: user.email });
