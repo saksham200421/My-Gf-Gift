@@ -34,6 +34,9 @@ const moments = [
 
 function Home() {
   const [apiStatus, setApiStatus] = useState("checking");
+  const valentineUrl = `${(
+    import.meta.env.VITE_API_URL || "http://localhost:5000"
+  ).replace(/\/+$/, "")}/valentine`;
 
   useEffect(() => {
     let isMounted = true;
@@ -73,6 +76,9 @@ function Home() {
             <Link className="btn btn-soft" to="/hub">
               Open the hub
             </Link>
+            <a className="btn btn-soft" href={valentineUrl}>
+              Open Valentine page
+            </a>
           </div>
           <div className={`status status-${apiStatus}`}>
             API status: {apiStatus}

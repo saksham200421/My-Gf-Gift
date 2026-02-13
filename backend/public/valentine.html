@@ -76,6 +76,23 @@
         background: rgba(255, 255, 255, 0.9);
         color: var(--ink-900);
         box-shadow: 0 12px 24px rgba(55, 81, 141, 0.18);
+        z-index: 3;
+      }
+
+      .landing-link {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--ink-900);
+        box-shadow: 0 12px 24px rgba(55, 81, 141, 0.18);
+        z-index: 3;
       }
 
       .header {
@@ -185,6 +202,7 @@
     <audio id="bg-audio" autoplay loop>
       <source src="FILL_IN_SONG_FILE.mp3" type="audio/mpeg" />
     </audio>
+    <a class="landing-link" id="landing-link" href="/">Back to landing</a>
     <button class="audio-toggle" id="audio-toggle" type="button">Mute</button>
     <main class="wrap">
       <section class="card">
@@ -206,6 +224,7 @@
       const yesButton = document.getElementById("yes");
       const audio = document.getElementById("bg-audio");
       const audioToggle = document.getElementById("audio-toggle");
+      const landingLink = document.getElementById("landing-link");
       const heartsCanvas = document.getElementById("hearts-bg");
       const heartsCtx = heartsCanvas.getContext("2d");
       let lastMove = 0;
@@ -444,6 +463,17 @@
         audio.muted = !audio.muted;
         audioToggle.textContent = audio.muted ? "Unmute" : "Mute";
       });
+
+      if (document.referrer) {
+        try {
+          const referrerUrl = new URL(document.referrer);
+          if (referrerUrl.protocol === "http:" || referrerUrl.protocol === "https:") {
+            landingLink.href = referrerUrl.origin;
+          }
+        } catch (_) {
+          landingLink.href = "/";
+        }
+      }
 
       window.addEventListener("resize", () => {
         positionNoRightOfYes();
