@@ -1,0 +1,25 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Source+Sans+3:wght@400;600&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --ink-900: #1f2436;
+  --ink-800: #2a3147;
+  --ink-700: #3c4460;
+  --ink-600: #515975;
+  --ink-500: #6a738d;
+}
+
+body {
+  margin: 0;
+  font-family: "Source Sans 3", "Segoe UI", sans-serif;
+  background: linear-gradient(160deg, #fff7fb 0%, #f5f2ff 45%, #eaf4ff 100%);
+  color: var(--ink-900);
+}
+
+#root {
+  min-height: 100vh;
+}
