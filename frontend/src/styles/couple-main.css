@@ -334,6 +334,50 @@
   color: var(--ink-900);
 }
 
+.song-results {
+  display: grid;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.song-results::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.song-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.song-item span {
+  font-size: 13px;
+  color: var(--ink-800);
+}
+
+.song-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.song-actions .chip-link {
+  display: inline-flex;
+  align-items: center;
+}
+
 .love-game-wrap {
   display: grid;
   gap: 8px;

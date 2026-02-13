@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addDashboardTodo,
   deleteDashboardTodo,
+  fetchLatestSongs,
   fetchDashboard,
+  searchSongs,
   searchPlace,
   toggleDashboardDate,
   updateDashboardFields,
@@ -58,6 +60,14 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [placeData, setPlaceData] = useState(null);
   const [placeLoading, setPlaceLoading] = useState(false);
   const [placeError, setPlaceError] = useState("");
+  const [songSearchQuery, setSongSearchQuery] = useState("");
+  const [songResults, setSongResults] = useState([]);
+  const [latestSongs, setLatestSongs] = useState([]);
+  const [songsLoading, setSongsLoading] = useState(false);
+  const [songsError, setSongsError] = useState("");
+  const [activePreviewId, setActivePreviewId] = useState(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState(null);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     fetchDashboard(authToken)
@@ -78,6 +88,22 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         setGamePrompt("Game: Take turns saying one thing you appreciate about each other.");
       });
   }, []);
+
+  useEffect(() => {
+    fetchLatestSongs(authToken)
+      .then((payload) => setLatestSongs(Array.isArray(payload.songs) ? payload.songs : []))
+      .catch(() => setLatestSongs([]));
+  }, [authToken]);
+
+  useEffect(
+    () => () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    },
+    []
+  );
 
   const monthCells = useMemo(() => {
     const year = monthDate.getFullYear();
@@ -191,6 +217,73 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       });
   };
 
+  const applySongPick = async (song) => {
+    const value = `${song.name} - ${song.artist}`;
+    setDashboard((prev) => ({ ...prev, songPick: value }));
+    await patchDashboard({ songPick: value });
+  };
+
+  const stopCurrentPreview = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    setActivePreviewId(null);
+  };
+
+  const togglePreview = async (song) => {
+    if (activePreviewId === song.id) {
+      stopCurrentPreview();
+      return;
+    }
+
+    const previewUrl = song.previewUrl;
+    if (!previewUrl) {
+      setSongsError("Preview unavailable for this track.");
+      return;
+    }
+
+    setSongsError("");
+    setPreviewLoadingId(song.id);
+    stopCurrentPreview();
+
+    try {
+      const audio = new Audio(previewUrl);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setActivePreviewId(null);
+      };
+      await audio.play();
+      setActivePreviewId(song.id);
+    } catch {
+      setSongsError("Could not play preview on this browser/session.");
+      setActivePreviewId(null);
+    } finally {
+      setPreviewLoadingId(null);
+    }
+  };
+
+  const handleSongSearch = async () => {
+    const query = songSearchQuery.trim();
+    if (!query) {
+      setSongsError("Type a song or artist name.");
+      return;
+    }
+
+    setSongsLoading(true);
+    setSongsError("");
+    try {
+      const payload = await searchSongs(authToken, query);
+      setSongResults(Array.isArray(payload.songs) ? payload.songs : []);
+    } catch {
+      setSongResults([]);
+      setSongsError("Could not fetch songs right now.");
+    } finally {
+      setSongsLoading(false);
+    }
+  };
+
   const handleSearchPlace = async () => {
     const query = placeQuery.trim() || dashboard.wannaGoTo?.trim();
     if (!query) {
@@ -300,6 +393,74 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             onBlur={() => patchDashboard({ songPick: dashboard.songPick })}
             placeholder="Song title or link"
           />
+          <div className="todo-input-row">
+            <input
+              value={songSearchQuery}
+              onChange={(event) => setSongSearchQuery(event.target.value)}
+              placeholder="Search latest songs or artist"
+            />
+            <button type="button" onClick={handleSongSearch} disabled={songsLoading}>
+              {songsLoading ? "Searching..." : "Search"}
+            </button>
+          </div>
+          {songsError ? <p>{songsError}</p> : null}
+
+          {songResults.length ? (
+            <div className="song-results">
+              {songResults.map((song) => (
+                <div className="song-item" key={`search-${song.id}`}>
+                  <span>{song.name} - {song.artist}</span>
+                  <div className="song-actions">
+                    <button type="button" onClick={() => applySongPick(song)}>
+                      Add
+                    </button>
+                    <button type="button" onClick={() => togglePreview(song)}>
+                      {previewLoadingId === song.id
+                        ? "Loading..."
+                        : activePreviewId === song.id
+                          ? "Pause"
+                          : "Preview"}
+                    </button>
+                    {song.url ? (
+                      <a className="chip-link" href={song.url} target="_blank" rel="noreferrer">
+                        Open
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {latestSongs.length ? (
+            <div>
+              <p>Latest picks</p>
+              <div className="song-results">
+                {latestSongs.slice(0, 8).map((song) => (
+                  <div className="song-item" key={`latest-${song.id}`}>
+                    <span>{song.name} - {song.artist}</span>
+                    <div className="song-actions">
+                      <button type="button" onClick={() => applySongPick(song)}>
+                        Add
+                      </button>
+                      <button type="button" onClick={() => togglePreview(song)}>
+                        {previewLoadingId === song.id
+                          ? "Loading..."
+                          : activePreviewId === song.id
+                            ? "Pause"
+                            : "Preview"}
+                      </button>
+                      {song.url ? (
+                        <a className="chip-link" href={song.url} target="_blank" rel="noreferrer">
+                          Open
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className="chip-row">
             {songQuickPicks.map((song) => (
               <button

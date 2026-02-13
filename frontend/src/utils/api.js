@@ -128,3 +128,23 @@ export async function searchPlace(token, query) {
     token,
   });
 }
+
+export async function fetchLatestSongs(token, country = "us", limit = 12) {
+  return apiRequest(
+    `/api/music/latest?country=${encodeURIComponent(country)}&limit=${encodeURIComponent(limit)}`,
+    {
+      method: "GET",
+      token,
+    }
+  );
+}
+
+export async function searchSongs(token, query, limit = 10) {
+  return apiRequest(
+    `/api/music/search?query=${encodeURIComponent(query)}&limit=${encodeURIComponent(limit)}`,
+    {
+      method: "GET",
+      token,
+    }
+  );
+}
