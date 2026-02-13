@@ -10,6 +10,11 @@
   - FRONTEND_ORIGIN=https://your-frontend.vercel.app
 - Deploy and copy the Render URL.
 
+### If Render asks for Dockerfile
+- Keep service type as **Web Service**.
+- Set Root Directory to `backend` so Render uses `backend/Dockerfile`.
+- If Render still asks for Docker settings, choose Docker runtime and set Dockerfile path to `backend/Dockerfile`.
+
 ## 2) Frontend (Vercel)
 - Import your GitHub repo in Vercel.
 - Root directory: frontend
