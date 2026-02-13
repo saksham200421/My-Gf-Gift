@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchHealth } from "../utils/api";
+import { buildValentineUrl, fetchHealth } from "../utils/api";
 
 const reasons = [
   {
@@ -32,11 +32,9 @@ const moments = [
   },
 ];
 
-function Home() {
+function Home({ authToken, authUser, onLogout }) {
   const [apiStatus, setApiStatus] = useState("checking");
-  const valentineUrl = `${(
-    import.meta.env.VITE_API_URL || "http://localhost:5000"
-  ).replace(/\/+$/, "")}/valentine`;
+  const valentineUrl = buildValentineUrl(authToken);
 
   useEffect(() => {
     let isMounted = true;
@@ -63,6 +61,7 @@ function Home() {
       <header className="hero">
         <div className="hero-content">
           <span className="badge">Valentine 2026</span>
+          {authUser?.name ? <span className="badge">Hi, {authUser.name}</span> : null}
           <h1>A soft place for our story.</h1>
           <p className="lead">
             A small corner of the internet that feels like us, warm, bright,
@@ -79,6 +78,9 @@ function Home() {
             <a className="btn btn-soft" href={valentineUrl}>
               Open Valentine page
             </a>
+            <button className="btn btn-soft" onClick={onLogout} type="button">
+              Logout
+            </button>
           </div>
           <div className={`status status-${apiStatus}`}>
             API status: {apiStatus}

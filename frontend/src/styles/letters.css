@@ -95,6 +95,59 @@
   margin: 0 auto;
 }
 
+.letters-create {
+  display: grid;
+  gap: 10px;
+  max-width: 760px;
+  margin: 0 auto 28px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 30px rgba(55, 81, 141, 0.12);
+}
+
+.letters-create h2 {
+  margin: 0 0 4px;
+  font-family: "Playfair Display", serif;
+  font-size: 1.3rem;
+}
+
+.letters-create input,
+.letters-create textarea {
+  border: 1px solid rgba(60, 68, 96, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: "Source Sans 3", "Segoe UI", sans-serif;
+  resize: vertical;
+}
+
+.letters-create textarea {
+  min-height: 110px;
+}
+
+.letters-create button {
+  justify-self: start;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: #e06b8f;
+  color: #fff6fb;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.letters-error,
+.letters-loading {
+  text-align: center;
+  margin: 0 auto 18px;
+  color: var(--ink-700);
+}
+
+.letters-error {
+  color: #b22a4f;
+}
+
 .letters-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

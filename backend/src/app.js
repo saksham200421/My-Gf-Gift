@@ -5,6 +5,9 @@ const express = require("express");
 const cors = require("cors");
 
 const healthRouter = require("./routes/health");
+const authRouter = require("./routes/auth");
+const lettersRouter = require("./routes/letters");
+const { requireAuthForHtml } = require("./middleware/auth");
 
 const app = express();
 
@@ -32,10 +35,12 @@ app.use(express.json());
 const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
 
-app.get("/valentine", (req, res) => {
+app.get("/valentine", requireAuthForHtml, (req, res) => {
 	res.sendFile(path.join(publicDir, "valentine.html"));
 });
 
 app.use("/api", healthRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/letters", lettersRouter);
 
 module.exports = app;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { createLetter, fetchLetters } from "../utils/api";
 
-const letters = [
+const fallbackLetters = [
   {
     id: 1,
     title: "The Day We Met",
@@ -69,7 +70,17 @@ Most of all, thank you for being you. You're everything I didn't know I needed, 
   },
 ];
 
-function Letters() {
+function Letters({ authToken }) {
+  const [letters, setLetters] = useState(fallbackLetters);
+  const [formData, setFormData] = useState({
+    title: "",
+    date: "",
+    preview: "",
+    content: "",
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [openingId, setOpeningId] = useState(null);
   const openTimeoutRef = useRef(null);
@@ -96,6 +107,62 @@ function Letters() {
     }
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadLetters = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await fetchLetters(authToken);
+        if (!isMounted) {
+          return;
+        }
+        if (response.letters?.length) {
+          setLetters(response.letters);
+        } else {
+          setLetters([]);
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setError(requestError.message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadLetters();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authToken]);
+
+  const handleFormChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateLetter = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    try {
+      const response = await createLetter(authToken, formData);
+      setLetters((prev) => [response.letter, ...prev]);
+      setFormData({ title: "", date: "", preview: "", content: "" });
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="letters-page">
       <div className="letters-background" aria-hidden="true">
@@ -109,6 +176,42 @@ function Letters() {
           Words I wanted to put somewhere you could always find them.
         </p>
       </div>
+
+      <form className="letters-create" onSubmit={handleCreateLetter}>
+        <h2>Create a new letter</h2>
+        <input
+          name="title"
+          value={formData.title}
+          onChange={handleFormChange}
+          placeholder="Letter title"
+          required
+        />
+        <input
+          name="date"
+          value={formData.date}
+          onChange={handleFormChange}
+          placeholder="Date label (optional)"
+        />
+        <input
+          name="preview"
+          value={formData.preview}
+          onChange={handleFormChange}
+          placeholder="Preview (optional)"
+        />
+        <textarea
+          name="content"
+          value={formData.content}
+          onChange={handleFormChange}
+          placeholder="Write your letter..."
+          required
+        />
+        <button type="submit" disabled={saving}>
+          {saving ? "Saving..." : "Save letter"}
+        </button>
+      </form>
+
+      {error ? <p className="letters-error">{error}</p> : null}
+      {loading ? <p className="letters-loading">Loading letters...</p> : null}
 
       <div className="letters-grid">
         {letters.map((letter) => (

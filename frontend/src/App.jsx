@@ -1,16 +1,63 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
+import { useMemo, useState } from "react";
 import Home from "./pages/Home";
 import Hub from "./pages/Hub";
 import Letters from "./pages/Letters";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
+import {
+  clearAuthSession,
+  getAuthToken,
+  getAuthUser,
+  saveAuthSession,
+} from "./utils/auth";
 
 function App() {
+  const [authToken, setAuthToken] = useState(() => getAuthToken());
+  const [authUser, setAuthUser] = useState(() => getAuthUser());
+
+  const isAuthenticated = useMemo(() => Boolean(authToken), [authToken]);
+
+  const handleAuthenticated = (token, user) => {
+    saveAuthSession(token, user);
+    setAuthToken(token);
+    setAuthUser(user);
+  };
+
+  const handleLogout = () => {
+    clearAuthSession();
+    setAuthToken(null);
+    setAuthUser(null);
+  };
+
   return (
     <div className="app">
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/hub" element={<Hub />} />
-        <Route path="/letters" element={<Letters />} />
+        <Route
+          path="/login"
+          element={
+            <Login
+              onAuthenticated={handleAuthenticated}
+              isAuthenticated={isAuthenticated}
+            />
+          }
+        />
+
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route
+            path="/"
+            element={
+              <Home
+                authToken={authToken}
+                authUser={authUser}
+                onLogout={handleLogout}
+              />
+            }
+          />
+          <Route path="/hub" element={<Hub />} />
+          <Route path="/letters" element={<Letters authToken={authToken} />} />
+        </Route>
       </Routes>
     </div>
   );
