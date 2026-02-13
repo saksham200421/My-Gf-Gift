@@ -230,6 +230,8 @@
       let lastMove = 0;
       const fallingHearts = [];
       const shootingHearts = [];
+      const diagonalShootingHearts = [];
+      const lingeringTrails = [];
       const heartPalette = [
         "#ff5ea8",
         "#ff7fb0",
@@ -301,6 +303,26 @@
         });
       };
 
+      const createDiagonalShootingHeart = () => {
+        const fromLeft = Math.random() > 0.5;
+        const startY = 20 + Math.random() * (viewportHeight * 0.35);
+        const vx = fromLeft ? 5.2 + Math.random() * 2.6 : -5.2 - Math.random() * 2.6;
+        const vy = 2.8 + Math.random() * 2.4;
+        diagonalShootingHearts.push({
+          x: fromLeft ? -70 : viewportWidth + 70,
+          y: startY,
+          vx,
+          vy,
+          size: 10 + Math.random() * 8,
+          life: 0,
+          maxLife: 1100 + Math.random() * 400,
+          color: pickHeartColor(),
+          alpha: 0.95,
+          rotation: Math.atan2(vy, vx) + Math.PI / 2,
+          vr: -0.03 + Math.random() * 0.06,
+        });
+      };
+
       const drawHeart = (x, y, size, color, alpha, rotation) => {
         heartsCtx.save();
         heartsCtx.translate(x, y);
@@ -336,9 +358,57 @@
         heartsCtx.restore();
       };
 
+      const addLingeringTrail = (heart) => {
+        lingeringTrails.push({
+          x: heart.x - heart.vx * 1.2,
+          y: heart.y - heart.vy * 1.2,
+          size: Math.max(4, heart.size * 0.46),
+          color: heart.color,
+          alpha: 0.5,
+          life: 0,
+          maxLife: 2100 + Math.random() * 1300,
+          rotation: heart.rotation,
+        });
+      };
+
+      const drawLingeringTrails = (delta) => {
+        for (let i = lingeringTrails.length - 1; i >= 0; i -= 1) {
+          const trail = lingeringTrails[i];
+          trail.life += delta;
+          trail.alpha = Math.max(0, 1 - trail.life / trail.maxLife) * 0.35;
+
+          drawHeart(
+            trail.x,
+            trail.y,
+            trail.size,
+            trail.color,
+            trail.alpha,
+            trail.rotation
+          );
+
+          if (trail.life >= trail.maxLife) {
+            lingeringTrails.splice(i, 1);
+          }
+        }
+      };
+
+      const drawDiagonalHeartTrail = (heart) => {
+        heartsCtx.save();
+        heartsCtx.globalAlpha = Math.max(0.08, heart.alpha * 0.22);
+        heartsCtx.strokeStyle = heart.color;
+        heartsCtx.lineWidth = Math.max(1, heart.size * 0.16);
+        heartsCtx.lineCap = "round";
+        heartsCtx.beginPath();
+        heartsCtx.moveTo(heart.x, heart.y);
+        heartsCtx.lineTo(heart.x - heart.vx * 7.5, heart.y - heart.vy * 7.5);
+        heartsCtx.stroke();
+        heartsCtx.restore();
+      };
+
       let lastFrame = performance.now();
       let fallSpawnTimer = 0;
       let shootSpawnTimer = 0;
+      let starSpawnTimer = 0;
 
       const animateHearts = (time) => {
         const delta = Math.min(33, time - lastFrame);
@@ -348,6 +418,9 @@
 
         fallSpawnTimer += delta;
         shootSpawnTimer += delta;
+        starSpawnTimer += delta;
+
+        drawLingeringTrails(delta);
 
         while (fallSpawnTimer > 110) {
           fallSpawnTimer -= 110;
@@ -357,6 +430,11 @@
         if (shootSpawnTimer > 650 + Math.random() * 450) {
           shootSpawnTimer = 0;
           createShootingHeart();
+        }
+
+        if (starSpawnTimer > 950 + Math.random() * 1400) {
+          starSpawnTimer = 0;
+          createDiagonalShootingHeart();
         }
 
         for (let i = fallingHearts.length - 1; i >= 0; i -= 1) {
@@ -402,6 +480,35 @@
             heart.x > viewportWidth + 80
           ) {
             shootingHearts.splice(i, 1);
+          }
+        }
+
+        for (let i = diagonalShootingHearts.length - 1; i >= 0; i -= 1) {
+          const heart = diagonalShootingHearts[i];
+          heart.life += delta;
+          heart.x += heart.vx * (delta / 16.67);
+          heart.y += heart.vy * (delta / 16.67);
+          heart.rotation += heart.vr * (delta / 16.67);
+          heart.alpha = Math.max(0, 1 - heart.life / heart.maxLife);
+
+          addLingeringTrail(heart);
+          drawDiagonalHeartTrail(heart);
+          drawHeart(
+            heart.x,
+            heart.y,
+            heart.size,
+            heart.color,
+            heart.alpha,
+            heart.rotation
+          );
+
+          if (
+            heart.life >= heart.maxLife ||
+            heart.y > viewportHeight + 60 ||
+            heart.x < -120 ||
+            heart.x > viewportWidth + 120
+          ) {
+            diagonalShootingHearts.splice(i, 1);
           }
         }
 
