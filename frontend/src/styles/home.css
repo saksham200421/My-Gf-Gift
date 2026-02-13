@@ -13,9 +13,50 @@
   gap: 28px;
   padding: 56px;
   border-radius: 28px;
-  background: linear-gradient(140deg, #fde8ef 0%, #f1f3ff 55%, #e8f2ff 100%);
+  background: linear-gradient(
+    140deg,
+    var(--hero-start, #efbccd) 0%,
+    var(--hero-middle, #c1cdf7) 55%,
+    var(--hero-end, #b8d0f8) 100%
+  );
   box-shadow: 0 24px 70px rgba(45, 59, 104, 0.15);
   overflow: hidden;
+}
+
+.gradient-tester {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 42, 72, 0.12);
+}
+
+.gradient-tester-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-700);
+  font-weight: 600;
+}
+
+.gradient-tester-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gradient-select {
+  border: 1px solid rgba(31, 42, 72, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--ink-900);
 }
 
 .hero::before {
@@ -288,6 +329,11 @@
 @media (max-width: 720px) {
   .hero {
     padding: 36px 24px;
+  }
+
+  .gradient-tester {
+    position: static;
+    margin-bottom: 8px;
   }
 
   .hero-card {

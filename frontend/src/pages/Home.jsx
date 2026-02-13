@@ -32,9 +32,44 @@ const moments = [
   },
 ];
 
+const gradientOptions = {
+  roseSky: [
+    ["#f7d4df", "#d8e0ff", "#cfe1ff"],
+    ["#efbccd", "#c1cdf7", "#b8d0f8"],
+    ["#e59fb6", "#aebeea", "#a1c0ef"],
+    ["#d984a1", "#9cacde", "#8eb2e6"],
+    ["#c66e90", "#8b9bd3", "#7ba5dd"],
+  ],
+  sunsetLilac: [
+    ["#f8d6cf", "#ead5f8", "#d5dffd"],
+    ["#f0b8ac", "#d9bcf2", "#bdcdf8"],
+    ["#e39e90", "#c8a9ea", "#a9bdf0"],
+    ["#d08979", "#b594df", "#95ade8"],
+    ["#bb7565", "#a27fd3", "#829de0"],
+  ],
+  berryTwilight: [
+    ["#ecc5dd", "#d5c8f6", "#c5d9ff"],
+    ["#dfa9cb", "#c2b4ec", "#b0c8f8"],
+    ["#cf8cb7", "#b09fe0", "#9ab6ef"],
+    ["#bd75a4", "#9d8bd3", "#86a5e6"],
+    ["#ab6291", "#8b79c6", "#7396dc"],
+  ],
+  oceanDusk: [
+    ["#c8d9f2", "#c2d5ec", "#bcd0e6"],
+    ["#adc6e5", "#a8c1de", "#a2bad8"],
+    ["#92b3d8", "#8daed0", "#88a8ca"],
+    ["#7aa1cb", "#769bc3", "#7196bd"],
+    ["#678fbc", "#6389b3", "#5f84ad"],
+  ],
+};
+
 function Home({ authToken, authUser, onLogout }) {
   const [apiStatus, setApiStatus] = useState("checking");
+  const [gradientOption, setGradientOption] = useState("roseSky");
+  const [gradientShade, setGradientShade] = useState(3);
   const valentineUrl = buildValentineUrl(authToken);
+
+  const [start, middle, end] = gradientOptions[gradientOption][gradientShade - 1];
 
   useEffect(() => {
     let isMounted = true;
@@ -58,7 +93,41 @@ function Home({ authToken, authUser, onLogout }) {
 
   return (
     <main className="page">
-      <header className="hero">
+      <header
+        className="hero"
+        style={{
+          "--hero-start": start,
+          "--hero-middle": middle,
+          "--hero-end": end,
+        }}
+      >
+        <div className="gradient-tester">
+          <span className="gradient-tester-label">Temporary Gradient Tester</span>
+          <div className="gradient-tester-controls">
+            <select
+              value={gradientOption}
+              onChange={(event) => setGradientOption(event.target.value)}
+              className="gradient-select"
+            >
+              <option value="roseSky">Option 1: Rose Sky</option>
+              <option value="sunsetLilac">Option 2: Sunset Lilac</option>
+              <option value="berryTwilight">Option 3: Berry Twilight</option>
+              <option value="oceanDusk">Option 4: Ocean Dusk</option>
+            </select>
+
+            <select
+              value={gradientShade}
+              onChange={(event) => setGradientShade(Number(event.target.value))}
+              className="gradient-select"
+            >
+              <option value={1}>Shade 1 (light)</option>
+              <option value={2}>Shade 2</option>
+              <option value={3}>Shade 3</option>
+              <option value={4}>Shade 4</option>
+              <option value={5}>Shade 5 (dark)</option>
+            </select>
+          </div>
+        </div>
         <div className="hero-content">
           <span className="badge">Valentine 2026</span>
           {authUser?.name ? <span className="badge">Hi, {authUser.name}</span> : null}
