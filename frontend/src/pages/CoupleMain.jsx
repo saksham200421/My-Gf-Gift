@@ -999,50 +999,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         </div>
 
         <div className="couple-card">
-          <h2>Love Snapshot</h2>
-          <div className="love-snapshot-grid">
-            <div>
-              <strong>{dashboard.highlightedDates.length}</strong>
-              <span>Highlighted Days</span>
-            </div>
-            <div>
-              <strong>{dashboard.specialOccasions.length}</strong>
-              <span>Special Occasions</span>
-            </div>
-            <div>
-              <strong>{dashboard.todos.filter((todo) => todo.done).length}</strong>
-              <span>Tasks Completed</span>
-            </div>
-            <div>
-              <strong>{Math.min(100, dashboard.gratitudeNote.trim().length + dashboard.thoughtToday.trim().length)}</strong>
-              <span>Connection Score</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="couple-card">
-          <h2>Spark Idea Jar</h2>
-          <p>{sparkIdea}</p>
-          <div className="inline-actions">
-            <button
-              type="button"
-              onClick={() => setSparkIdea(pickRandom(sparkIdeas))}
-            >
-              New Spark
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                setDashboard((prev) => ({ ...prev, datePlan: sparkIdea }));
-                await patchDashboard({ datePlan: sparkIdea });
-              }}
-            >
-              Use in Date Plan
-            </button>
-          </div>
-        </div>
-
-        <div className="couple-card">
           <h2>To-do list system</h2>
           <div className="inline-actions">
             <span>
@@ -1251,6 +1207,50 @@ function CoupleMain({ authToken, authUser, onLogout }) {
               onClick={applyDatePlanSuggestion}
             >
               Spin Date Plan
+            </button>
+          </div>
+        </div>
+
+        <div className="couple-card">
+          <h2>Love Snapshot</h2>
+          <div className="love-snapshot-grid">
+            <div>
+              <strong>{dashboard.highlightedDates.length}</strong>
+              <span>Highlighted Days</span>
+            </div>
+            <div>
+              <strong>{dashboard.specialOccasions.length}</strong>
+              <span>Special Occasions</span>
+            </div>
+            <div>
+              <strong>{dashboard.todos.filter((todo) => todo.done).length}</strong>
+              <span>Tasks Completed</span>
+            </div>
+            <div>
+              <strong>{Math.min(100, dashboard.gratitudeNote.trim().length + dashboard.thoughtToday.trim().length)}</strong>
+              <span>Connection Score</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="couple-card">
+          <h2>Spark Idea Jar</h2>
+          <p>{sparkIdea}</p>
+          <div className="inline-actions">
+            <button
+              type="button"
+              onClick={() => setSparkIdea(pickRandom(sparkIdeas))}
+            >
+              New Spark
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setDashboard((prev) => ({ ...prev, datePlan: sparkIdea }));
+                await patchDashboard({ datePlan: sparkIdea });
+              }}
+            >
+              Use in Date Plan
             </button>
           </div>
         </div>
