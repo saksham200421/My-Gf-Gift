@@ -26,6 +26,7 @@ function Gallery() {
   const [activeIndexes, setActiveIndexes] = useState(() =>
     Array.from({ length: GRID_SLOTS }, () => 0)
   );
+  const [readyMap, setReadyMap] = useState({});
   const videoReadyRef = useRef({});
 
   const mediaItems = useMemo(() => {
@@ -70,6 +71,25 @@ function Gallery() {
   }, [mediaItems]);
 
   useEffect(() => {
+    mediaItems.forEach((item) => {
+      if (item.type !== "image") {
+        return;
+      }
+
+      const image = new Image();
+      image.onload = () => {
+        setReadyMap((prev) => {
+          if (prev[item.id]) {
+            return prev;
+          }
+          return { ...prev, [item.id]: true };
+        });
+      };
+      image.src = item.src;
+    });
+  }, [mediaItems]);
+
+  useEffect(() => {
     const nextInitialIndexes = slidesByPanel.map((slides) => {
       const imageIndex = slides.findIndex((item) => item.type === "image");
       return imageIndex >= 0 ? imageIndex : 0;
@@ -80,14 +100,14 @@ function Gallery() {
 
   useEffect(() => {
     const timers = slidesByPanel.map((bucket, bucketIndex) => {
-      const intervalMs = 2600 + Math.floor(Math.random() * 2200);
+      const intervalMs = 5000;
       return window.setInterval(() => {
         setActiveIndexes((prev) => {
           const next = [...prev];
           const currentIndex = next[bucketIndex] ?? 0;
           const readyIndexes = bucket
             .map((item, itemIndex) => {
-              if (item.type === "image") {
+              if (item.type === "image" && readyMap[item.id]) {
                 return itemIndex;
               }
               return videoReadyRef.current[`${bucketIndex}-${itemIndex}`] ? itemIndex : -1;
@@ -104,6 +124,9 @@ function Gallery() {
           }
 
           const candidates = readyIndexes.filter((itemIndex) => itemIndex !== currentIndex);
+          if (!candidates.length) {
+            return next;
+          }
           const randomIndex = candidates[Math.floor(Math.random() * candidates.length)];
           next[bucketIndex] = randomIndex;
           return next;
@@ -114,7 +137,7 @@ function Gallery() {
     return () => {
       timers.forEach((timer) => window.clearInterval(timer));
     };
-  }, [slidesByPanel]);
+  }, [readyMap, slidesByPanel]);
 
   return (
     <main className="gallery-page">
@@ -137,6 +160,12 @@ function Gallery() {
                     poster={fallbackImage}
                     onLoadedData={() => {
                       videoReadyRef.current[`${panelIndex}-${itemIndex}`] = true;
+                      setReadyMap((prev) => {
+                        if (prev[item.id]) {
+                          return prev;
+                        }
+                        return { ...prev, [item.id]: true };
+                      });
                     }}
                   />
                 );

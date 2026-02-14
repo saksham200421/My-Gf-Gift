@@ -3,6 +3,7 @@
   position: relative;
   overflow: hidden;
   padding: 0;
+  background: linear-gradient(160deg, #ffeaf2 0%, #ffdff1 45%, #ffeef7 100%);
 }
 
 .gallery-grid {
@@ -28,7 +29,7 @@
   object-fit: cover;
   object-position: center;
   opacity: 0;
-  transition: opacity 0.9s ease;
+  transition: opacity 1s ease;
   transform: scale(1.02);
 }
 
@@ -39,31 +40,6 @@
 
 .gallery-media.is-active {
   opacity: 1;
-}
-
-.gallery-overlay-content {
-  position: absolute;
-  left: 50%;
-  top: 24px;
-  transform: translateX(-50%);
-  z-index: 2;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(31, 42, 72, 0.2);
-  border-radius: 12px;
-  padding: 10px 14px;
-  backdrop-filter: blur(2px);
-}
-
-.gallery-overlay-content h1 {
-  margin: 0;
-  font-family: "Playfair Display", "Times New Roman", serif;
-  font-size: clamp(22px, 3vw, 34px);
-}
-
-.gallery-overlay-content p {
-  margin: 4px 0 0;
-  color: var(--ink-700);
 }
 
 @media (max-width: 860px) {
