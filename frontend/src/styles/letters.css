@@ -137,6 +137,63 @@
   cursor: pointer;
 }
 
+.letters-fab {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: #e06b8f;
+  color: #fff;
+  font-size: 34px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 28px rgba(224, 107, 143, 0.38);
+  cursor: pointer;
+  z-index: 1100;
+}
+
+.letters-compose-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 36, 54, 0.58);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1050;
+}
+
+.letters-compose-modal {
+  margin: 0;
+  width: min(760px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.letters-compose-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.letters-compose-close {
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  background: rgba(224, 107, 143, 0.12);
+  color: #c14c72;
+  cursor: pointer;
+}
+
 .letters-error,
 .letters-loading {
   text-align: center;
@@ -401,5 +458,12 @@
 
   .letter-modal-body {
     font-size: 1rem;
+  }
+
+  .letters-fab {
+    right: 14px;
+    bottom: 14px;
+    width: 52px;
+    height: 52px;
   }
 }

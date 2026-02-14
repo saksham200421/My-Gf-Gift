@@ -83,6 +83,7 @@ function Letters({ authToken }) {
   const [error, setError] = useState("");
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [openingId, setOpeningId] = useState(null);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const openTimeoutRef = useRef(null);
   const hearts = Array.from({ length: 12 }, (_, index) => index);
 
@@ -156,6 +157,7 @@ function Letters({ authToken }) {
       const response = await createLetter(authToken, formData);
       setLetters((prev) => [response.letter, ...prev]);
       setFormData({ title: "", date: "", preview: "", content: "" });
+      setIsComposerOpen(false);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -176,39 +178,6 @@ function Letters({ authToken }) {
           Words I wanted to put somewhere you could always find them.
         </p>
       </div>
-
-      <form className="letters-create" onSubmit={handleCreateLetter}>
-        <h2>Create a new letter</h2>
-        <input
-          name="title"
-          value={formData.title}
-          onChange={handleFormChange}
-          placeholder="Letter title"
-          required
-        />
-        <input
-          name="date"
-          value={formData.date}
-          onChange={handleFormChange}
-          placeholder="Date label (optional)"
-        />
-        <input
-          name="preview"
-          value={formData.preview}
-          onChange={handleFormChange}
-          placeholder="Preview (optional)"
-        />
-        <textarea
-          name="content"
-          value={formData.content}
-          onChange={handleFormChange}
-          placeholder="Write your letter..."
-          required
-        />
-        <button type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Save letter"}
-        </button>
-      </form>
 
       {error ? <p className="letters-error">{error}</p> : null}
       {loading ? <p className="letters-loading">Loading letters...</p> : null}
@@ -253,6 +222,66 @@ function Letters({ authToken }) {
           </div>
         </div>
       )}
+
+      {isComposerOpen && (
+        <div className="letters-compose-overlay" onClick={() => setIsComposerOpen(false)}>
+          <form
+            className="letters-create letters-compose-modal"
+            onSubmit={handleCreateLetter}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="letters-compose-head">
+              <h2>Create a new letter</h2>
+              <button
+                type="button"
+                className="letters-compose-close"
+                onClick={() => setIsComposerOpen(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <input
+              name="title"
+              value={formData.title}
+              onChange={handleFormChange}
+              placeholder="Letter title"
+              required
+            />
+            <input
+              name="date"
+              value={formData.date}
+              onChange={handleFormChange}
+              placeholder="Date label (optional)"
+            />
+            <input
+              name="preview"
+              value={formData.preview}
+              onChange={handleFormChange}
+              placeholder="Preview (optional)"
+            />
+            <textarea
+              name="content"
+              value={formData.content}
+              onChange={handleFormChange}
+              placeholder="Write your letter..."
+              required
+            />
+            <button type="submit" disabled={saving}>
+              {saving ? "Saving..." : "Save letter"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="letters-fab"
+        onClick={() => setIsComposerOpen(true)}
+        aria-label="Add new letter"
+      >
+        +
+      </button>
     </div>
   );
 }

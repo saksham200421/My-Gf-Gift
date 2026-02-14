@@ -121,7 +121,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
 
     const interval = window.setInterval(() => {
       setMiniGalleryIndex((prev) => (prev + 1) % dashboardGalleryPreview.length);
-    }, 2500);
+    }, 5200);
 
     return () => {
       window.clearInterval(interval);
