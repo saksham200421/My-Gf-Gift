@@ -275,28 +275,6 @@ function MarryMe() {
           <button
             key={`no-${noChaosTick}`}
             type="button"
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-     . 
             className="marry-choice-no is-chaos"
             onClick={handleNoClick}
           >
