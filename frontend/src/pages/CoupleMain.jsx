@@ -13,6 +13,14 @@ import {
 } from "../utils/api";
 import LoveRunnerGame from "../components/LoveRunnerGame";
 
+const dashboardGalleryModules = import.meta.glob(
+  "../assets/gallery-media/*.{png,jpg,jpeg,webp,avif,gif}",
+  {
+    eager: true,
+    import: "default",
+  }
+);
+
 const emptyDashboard = {
   eatToday: "",
   moodToday: "",
@@ -77,6 +85,14 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   });
   const [youtubePlaybackUrl, setYoutubePlaybackUrl] = useState("");
   const audioRef = useRef(null);
+
+  const dashboardGalleryPreview = useMemo(() => {
+    const images = Object.values(dashboardGalleryModules).filter(Boolean);
+    if (!images.length) {
+      return [];
+    }
+    return images.slice(0, 6);
+  }, []);
 
   useEffect(() => {
     fetchDashboard(authToken)
@@ -861,98 +877,45 @@ function CoupleMain({ authToken, authUser, onLogout }) {
 
       <section className="couple-col couple-col-right">
         <div className="couple-card">
-          <h3>Couple Game</h3>
-          <p>{gamePrompt}</p>
-          <button
-            type="button"
-            onClick={refreshGamePrompt}
-          >
-            New challenge
-          </button>
-        </div>
-
-        <div className="couple-card">
-          <h3>2D Love Runner</h3>
-          <LoveRunnerGame />
-        </div>
-
-        <div className="couple-card">
-          <h3>Wanna go to</h3>
-          <div className="todo-input-row">
-            <input
-              value={placeQuery}
-              onChange={(event) => setPlaceQuery(event.target.value)}
-              onBlur={() => {
-                if (placeQuery.trim() && placeQuery.trim() !== dashboard.wannaGoTo) {
-                  setDashboard((prev) => ({ ...prev, wannaGoTo: placeQuery.trim() }));
-                  patchDashboard({ wannaGoTo: placeQuery.trim() });
-                }
-              }}
-              placeholder={dashboard.wannaGoTo || "Paris, Goa, Tokyo, Manali..."}
-            />
-            <button type="button" onClick={handleSearchPlace} disabled={placeLoading}>
-              {placeLoading ? "Searching..." : "Search"}
-            </button>
-          </div>
-
-          {placeError ? <p>{placeError}</p> : null}
-
-          {placeData ? (
-            <div className="place-result">
-              <p>
-                <strong>{placeData.name}</strong>
-              </p>
-              <p>{placeData.displayName}</p>
-              {placeData.description ? <p>{placeData.description}</p> : null}
-
-              {placeData.imageUrl ? (
-                <img src={placeData.imageUrl} alt={placeData.name} className="place-image" />
-              ) : null}
-
-              {placeData.mapEmbedUrl ? (
-                <iframe
-                  className="place-map"
-                  src={placeData.mapEmbedUrl}
-                  title={`Map for ${placeData.name}`}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
+          <h3>Mini Gallery</h3>
+          {dashboardGalleryPreview.length ? (
+            <div className="dash-mini-gallery-grid">
+              {dashboardGalleryPreview.map((imageSrc, index) => (
+                <div
+                  key={`dash-gallery-${index}`}
+                  className="dash-mini-gallery-item"
+                  style={{ backgroundImage: `url(${imageSrc})` }}
                 />
-              ) : null}
-
-              <div className="chip-row">
-                {placeData.wikipediaUrl ? (
-                  <a className="chip-link" href={placeData.wikipediaUrl} target="_blank" rel="noreferrer">
-                    Learn more
-                  </a>
-                ) : null}
-                {placeData.mapStaticUrl ? (
-                  <a className="chip-link" href={placeData.mapStaticUrl} target="_blank" rel="noreferrer">
-                    Open static map
-                  </a>
-                ) : null}
-              </div>
+              ))}
             </div>
           ) : (
-            <p>Search a destination to preview map + recognized place image.</p>
+            <p>Add images to the gallery to show preview tiles here.</p>
           )}
+          <button type="button" onClick={() => navigate("/gallery")}>
+            Open Full Gallery
+          </button>
         </div>
 
         <div className="couple-card">
-          <h3>Session</h3>
-          <p>Logged in as {authUser?.name || "Love"}</p>
-          <p className="saving-text">{isSaving ? "Saving..." : "All changes synced"}</p>
-          <p className="saving-text">
-            Last save: {lastSavedAt ? lastSavedAt.toLocaleTimeString() : "No local save timestamp"}
-          </p>
-          <button type="button" onClick={() => navigate("/gallery")}>
-            Open Media Gallery
+          <h3>Explore App</h3>
+          <p>Jump to every section quickly.</p>
+          <div className="dash-links-grid">
+            <button type="button" onClick={() => navigate("/")}>Dashboard</button>
+            <button type="button" onClick={() => navigate("/hub")}>Hub</button>
+            <button type="button" onClick={() => navigate("/letters")}>Letters</button>
+            <button type="button" onClick={() => navigate("/gallery")}>Gallery</button>
+            <button type="button" onClick={() => navigate("/marry-me")}>Marriage Certificate</button>
+            <button type="button" onClick={onLogout}>Logout</button>
+          </div>
+        </div>
+
+        <div className="couple-card">
+          <h3>Game Zone</h3>
+          <p>{gamePrompt}</p>
+          <button type="button" onClick={refreshGamePrompt}>
+            New challenge
           </button>
-          <button type="button" onClick={() => navigate("/marry-me")}>
-            Wedding Certificate
-          </button>
-          <button type="button" onClick={onLogout}>
-            Logout
-          </button>
+          <LoveRunnerGame />
         </div>
       </section>
     </main>

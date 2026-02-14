@@ -378,6 +378,27 @@
   align-items: center;
 }
 
+.dash-mini-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dash-mini-gallery-item {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  background-size: cover;
+  background-position: center;
+}
+
+.dash-links-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .now-playing-box {
   display: grid;
   gap: 8px;
