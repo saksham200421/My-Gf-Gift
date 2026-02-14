@@ -188,7 +188,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [newTodo, setNewTodo] = useState("");
   const [occasionDate, setOccasionDate] = useState("");
   const [occasionText, setOccasionText] = useState("");
-  const [occasionStatus, setOccasionStatus] = useState("");
   const [pingStatus, setPingStatus] = useState("");
   const [todoFilter, setTodoFilter] = useState("all");
   const [isSaving, setIsSaving] = useState(false);
@@ -641,17 +640,15 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     const text = occasionText.trim();
 
     if (!dateKey || !text) {
-      setOccasionStatus("Pick a day and add occasion text.");
       return;
     }
 
     try {
       const payload = await upsertDashboardOccasion(authToken, dateKey, text);
       setDashboard(payload.dashboard || emptyDashboard);
-      setOccasionStatus("Occasion saved.");
       setLastSavedAt(new Date());
-    } catch (error) {
-      setOccasionStatus(error.message || "Could not save occasion.");
+    } catch {
+      return;
     }
   };
 
@@ -662,10 +659,9 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       if (occasionDate === dateKey) {
         setOccasionText("");
       }
-      setOccasionStatus("Occasion removed.");
       setLastSavedAt(new Date());
-    } catch (error) {
-      setOccasionStatus(error.message || "Could not delete occasion.");
+    } catch {
+      return;
     }
   };
 
@@ -1000,7 +996,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
               Save
             </button>
           </div>
-          {occasionStatus ? <p>{occasionStatus}</p> : null}
           <div className="calendar-grid">
             {["S", "M", "T", "W", "T", "F", "S"].map((label) => (
               <span key={label} className="calendar-label">
