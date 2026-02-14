@@ -21,6 +21,7 @@
 - Import your GitHub repo in Vercel.
 - Root directory: frontend
 - Framework: Vite
+- Ensure `frontend/vercel.json` exists with SPA fallback routes so refreshing pages like `/gallery` does not return 404.
 - Set env vars:
   - VITE_API_URL=https://your-backend.onrender.com
 - Deploy and copy the Vercel URL.
