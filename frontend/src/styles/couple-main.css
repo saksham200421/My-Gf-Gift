@@ -51,6 +51,41 @@
   align-content: start;
   backdrop-filter: blur(4px);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.couple-heart-rain {
+  position: absolute;
+  inset: -5% 0 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.couple-heart-drop {
+  position: absolute;
+  top: -16%;
+  color: rgba(214, 72, 131, 0.9);
+  text-shadow: 0 4px 10px rgba(255, 116, 168, 0.35);
+  animation-name: coupleHeartFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes coupleHeartFall {
+  0% {
+    transform: translate3d(0, -14%, 0) rotate(0deg);
+  }
+  30% {
+    transform: translate3d(-10px, 28vh, 0) rotate(-8deg);
+  }
+  65% {
+    transform: translate3d(10px, 64vh, 0) rotate(8deg);
+  }
+  100% {
+    transform: translate3d(-6px, 120vh, 0) rotate(-4deg);
+  }
 }
 
 .couple-col-left {

@@ -66,6 +66,20 @@ const emptyDashboard = {
 
 const foodQuickPicks = ["Pizza", "Pasta", "Biryani", "Sushi", "Burger", "Chaat"];
 const moodQuickPicks = ["Happy", "Calm", "Romantic", "Chaotic", "Tired", "Goofy"];
+const fallingHeartDrops = [
+  { left: "4%", delay: "0s", duration: "8.8s", size: "14px", opacity: 0.45 },
+  { left: "12%", delay: "1.1s", duration: "9.6s", size: "18px", opacity: 0.38 },
+  { left: "21%", delay: "0.4s", duration: "10.2s", size: "16px", opacity: 0.5 },
+  { left: "29%", delay: "2.2s", duration: "8.4s", size: "15px", opacity: 0.42 },
+  { left: "37%", delay: "1.7s", duration: "11.1s", size: "20px", opacity: 0.34 },
+  { left: "45%", delay: "2.8s", duration: "9.1s", size: "14px", opacity: 0.46 },
+  { left: "54%", delay: "0.9s", duration: "10.7s", size: "17px", opacity: 0.4 },
+  { left: "63%", delay: "3.1s", duration: "8.9s", size: "13px", opacity: 0.44 },
+  { left: "71%", delay: "1.4s", duration: "10.4s", size: "19px", opacity: 0.36 },
+  { left: "79%", delay: "2.5s", duration: "9.8s", size: "15px", opacity: 0.43 },
+  { left: "88%", delay: "0.2s", duration: "11.3s", size: "18px", opacity: 0.35 },
+  { left: "95%", delay: "1.9s", duration: "8.6s", size: "14px", opacity: 0.47 },
+];
 const gameFallbackPrompts = [
   "Maintain eye contact for 30 seconds and say one thing you desire more in this relationship.",
   "Give your partner 5 slow compliments, one every 5 seconds.",
@@ -875,6 +889,24 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     <main
       className={`couple-page couple-theme-${dashboardTheme} couple-bg-${dashboardBackgroundTheme}`}
     >
+      <div className="couple-heart-rain" aria-hidden="true">
+        {fallingHeartDrops.map((drop, index) => (
+          <span
+            key={`heart-drop-${index}`}
+            className="couple-heart-drop"
+            style={{
+              left: drop.left,
+              animationDelay: drop.delay,
+              animationDuration: drop.duration,
+              fontSize: drop.size,
+              opacity: drop.opacity,
+            }}
+          >
+            ♥
+          </span>
+        ))}
+      </div>
+
       <section className="couple-col couple-col-left">
         <div className="couple-card">
           <h3>Wanna eat this ___ today?</h3>
