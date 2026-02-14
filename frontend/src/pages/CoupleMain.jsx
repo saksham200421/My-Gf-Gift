@@ -48,6 +48,12 @@ const gameFallbackPrompts = [
   "Take turns describing your ideal cuddle plan.",
 ];
 
+const dashboardThemeOptions = [
+  { id: "soft-blush", label: "Soft Blush" },
+  { id: "sweet-lilac", label: "Sweet Lilac" },
+  { id: "dreamy-sky", label: "Dreamy Sky" },
+];
+
 const isLikelyYouTubeUrl = (value) =>
   /^https?:\/\//i.test(value) &&
   /(youtube\.com|youtu\.be|music\.youtube\.com)/i.test(value);
@@ -89,6 +95,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   });
   const [youtubePlaybackUrl, setYoutubePlaybackUrl] = useState("");
   const [miniGalleryIndex, setMiniGalleryIndex] = useState(0);
+  const [dashboardTheme, setDashboardTheme] = useState("soft-blush");
   const audioRef = useRef(null);
 
   const dashboardGalleryPreview = useMemo(() => {
@@ -439,7 +446,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   };
 
   return (
-    <main className="couple-page">
+    <main className={`couple-page couple-theme-${dashboardTheme}`}>
       <section className="couple-col couple-col-left">
         <div className="couple-card">
           <h3>Wanna eat this ___ today?</h3>
@@ -870,6 +877,23 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       </section>
 
       <section className="couple-col couple-col-right">
+        <div className="couple-card">
+          <h3>Style Mood</h3>
+          <p>Pick a soft dashboard vibe.</p>
+          <div className="dash-style-grid">
+            {dashboardThemeOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`dash-style-btn${dashboardTheme === option.id ? " is-active" : ""}`}
+                onClick={() => setDashboardTheme(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="couple-card">
           <h3>Mini Gallery</h3>
           {activeDashboardMedia ? (

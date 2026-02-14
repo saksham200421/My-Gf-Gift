@@ -97,7 +97,7 @@ function Login({ onAuthenticated, isAuthenticated }) {
   };
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/valentine" replace />;
   }
 
   return (

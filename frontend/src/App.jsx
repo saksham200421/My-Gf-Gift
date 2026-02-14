@@ -1,5 +1,5 @@
 import "./App.css";
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { useMemo, useState } from "react";
 import CoupleMain from "./pages/CoupleMain";
 import Gallery from "./pages/Gallery";
@@ -7,6 +7,7 @@ import Hub from "./pages/Hub";
 import Letters from "./pages/Letters";
 import Login from "./pages/Login";
 import MarryMe from "./pages/MarryMe";
+import ValentineGate from "./pages/ValentineGate";
 import ProtectedRoute from "./components/ProtectedRoute";
 import {
   clearAuthSession,
@@ -47,6 +48,7 @@ function App() {
         />
 
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/valentine" element={<ValentineGate authUser={authUser} />} />
           <Route
             path="/"
             element={
@@ -62,6 +64,8 @@ function App() {
           <Route path="/marry-me" element={<MarryMe />} />
           <Route path="/gallery" element={<Gallery />} />
         </Route>
+
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/valentine" : "/login"} replace />} />
       </Routes>
     </div>
   );
