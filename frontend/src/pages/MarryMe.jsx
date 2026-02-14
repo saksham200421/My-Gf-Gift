@@ -274,8 +274,7 @@ function MarryMe() {
 
         <div className="marry-declaration">
           <p>
-            This certifies that <strong>{partnerOne || "Your Name"}</strong> and{" "}
-            <strong>{partnerTwo || "Her Name"}</strong> are bound by laughter, loyalty, and love.
+            Do you <strong>{partnerOne || "Your Name"}</strong> take <strong>{partnerTwo || "Her Name"}</strong> to be your lawful wedded spouse, and do <strong>{partnerTwo || "Her Name"}</strong> take <strong>{partnerOne || "Your Name"}</strong> to be your lawful wedded Husband, to have and to hold from this day forward, for better or for worse, for richer or for poorer, in sickness and in health, until death do you part?
           </p>
           <p>Signed on {new Date(ceremonyDate).toLocaleDateString("en-US", { dateStyle: "long" })}.</p>
         </div>
