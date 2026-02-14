@@ -10,6 +10,20 @@ const galleryModules = import.meta.glob(
 );
 
 const GRID_SLOTS = 6;
+const demoStockImages = [
+  "https://picsum.photos/seed/wedding-1/1200/900",
+  "https://picsum.photos/seed/wedding-2/1200/900",
+  "https://picsum.photos/seed/wedding-3/1200/900",
+  "https://picsum.photos/seed/wedding-4/1200/900",
+  "https://picsum.photos/seed/wedding-5/1200/900",
+  "https://picsum.photos/seed/wedding-6/1200/900",
+  "https://picsum.photos/seed/wedding-7/1200/900",
+  "https://picsum.photos/seed/wedding-8/1200/900",
+  "https://picsum.photos/seed/wedding-9/1200/900",
+  "https://picsum.photos/seed/wedding-10/1200/900",
+  "https://picsum.photos/seed/wedding-11/1200/900",
+  "https://picsum.photos/seed/wedding-12/1200/900",
+];
 
 const shuffleList = (list) => {
   const clone = [...list];
@@ -35,7 +49,9 @@ function MarryMe() {
 
   const galleryImages = useMemo(() => {
     const collected = Object.values(galleryModules).filter(Boolean);
-    return collected.length ? collected : [fallbackImage];
+    return collected.length
+      ? [...collected, ...demoStockImages]
+      : [fallbackImage, ...demoStockImages];
   }, []);
 
   const slidesByPanel = useMemo(() => {
