@@ -20,6 +20,7 @@ const galleryVideoModules = import.meta.glob("../assets/gallery-media/*.{mp4,web
 });
 
 const GRID_SLOTS = 6;
+const WEDDING_SONG_URL = "/wedding-song/wedding.mp3";
 
 const shuffleList = (list) => {
   const clone = [...list];
@@ -45,7 +46,7 @@ function MarryMe() {
   const [responseLabel, setResponseLabel] = useState("");
   const [showStamp, setShowStamp] = useState(false);
   const [noChaosTick, setNoChaosTick] = useState(0);
-  const chimeControllerRef = useRef(null);
+  const audioRef = useRef(null);
 
   const galleryMedia = useMemo(() => {
     const marriageImages = Object.values(marriageImageModules)
@@ -123,116 +124,22 @@ function MarryMe() {
   useEffect(() => {
     let cancelled = false;
 
-    const setupWeddingMarch = async () => {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) {
-        setSongError("Your browser does not support wedding march audio.");
-        return;
-      }
+    const setupWeddingSong = async () => {
+      const audio = new Audio(WEDDING_SONG_URL);
+      audio.loop = true;
+      audio.volume = 0.5;
+      audio.preload = "auto";
+      audioRef.current = audio;
 
-      const audioContext = new AudioContextClass();
-      const activeNodes = new Set();
-      let patternTimer = null;
-
-      const weddingMarchPattern = [
-        { melody: 392.0, chord: [261.63, 329.63], duration: 0.55 },
-        { melody: 523.25, chord: [261.63, 392.0], duration: 0.55 },
-        { melody: 659.25, chord: [329.63, 523.25], duration: 0.8 },
-        { melody: 587.33, chord: [293.66, 440.0], duration: 0.6 },
-        { melody: 523.25, chord: [261.63, 392.0], duration: 0.9 },
-        { melody: 392.0, chord: [246.94, 392.0], duration: 0.55 },
-        { melody: 493.88, chord: [246.94, 369.99], duration: 0.55 },
-        { melody: 587.33, chord: [293.66, 440.0], duration: 0.8 },
-        { melody: 523.25, chord: [261.63, 392.0], duration: 0.65 },
-        { melody: 493.88, chord: [246.94, 369.99], duration: 0.65 },
-        { melody: 440.0, chord: [220.0, 329.63], duration: 1.1 },
-      ];
-
-      const patternDuration =
-        weddingMarchPattern.reduce((sum, note) => sum + note.duration, 0) + 0.9;
-
-      const playOrganTone = (frequency, startTime, duration, gainValue) => {
-        const mainOscillator = audioContext.createOscillator();
-        const octaveOscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        const filterNode = audioContext.createBiquadFilter();
-
-        mainOscillator.type = "triangle";
-        octaveOscillator.type = "sine";
-        filterNode.type = "lowpass";
-        filterNode.frequency.setValueAtTime(1900, startTime);
-
-        mainOscillator.frequency.setValueAtTime(frequency, startTime);
-        octaveOscillator.frequency.setValueAtTime(frequency * 2, startTime);
-
-        gainNode.gain.setValueAtTime(0.0001, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(gainValue, startTime + 0.03);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-        mainOscillator.connect(filterNode);
-        octaveOscillator.connect(filterNode);
-        filterNode.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        mainOscillator.start(startTime);
-        octaveOscillator.start(startTime);
-        mainOscillator.stop(startTime + duration + 0.03);
-        octaveOscillator.stop(startTime + duration + 0.03);
-
-        activeNodes.add(mainOscillator);
-        activeNodes.add(octaveOscillator);
-
-        mainOscillator.onended = () => activeNodes.delete(mainOscillator);
-        octaveOscillator.onended = () => activeNodes.delete(octaveOscillator);
-      };
-
-      const playPattern = () => {
-        let cursor = audioContext.currentTime + 0.08;
-
-        weddingMarchPattern.forEach((note) => {
-          playOrganTone(note.melody, cursor, note.duration * 0.95, 0.16);
-          note.chord.forEach((chordNote) => {
-            playOrganTone(chordNote, cursor, note.duration * 0.95, 0.08);
-          });
-          playOrganTone(note.chord[0] / 2, cursor, note.duration * 0.95, 0.05);
-          cursor += note.duration;
-        });
-      };
-
-      const start = async () => {
-        if (audioContext.state === "suspended") {
-          await audioContext.resume();
+      audio.addEventListener("error", () => {
+        if (!cancelled) {
+          setSongError("Add your MP3 at /public/wedding-song/wedding.mp3");
+          setMusicPlaying(false);
         }
-        if (patternTimer) {
-          return;
-        }
-        playPattern();
-        patternTimer = window.setInterval(playPattern, patternDuration * 1000);
-      };
-
-      const stop = () => {
-        if (patternTimer) {
-          window.clearInterval(patternTimer);
-          patternTimer = null;
-        }
-        activeNodes.forEach((node) => {
-          try {
-            node.stop();
-          } catch {
-            return;
-          }
-        });
-        activeNodes.clear();
-      };
-
-      chimeControllerRef.current = {
-        start,
-        stop,
-        context: audioContext,
-      };
+      });
 
       try {
-        await start();
+        await audio.play();
         if (!cancelled) {
           setMusicPlaying(true);
           setAutoplayBlocked(false);
@@ -240,42 +147,41 @@ function MarryMe() {
         }
       } catch {
         if (!cancelled) {
-          setMusicPlaying(false);
           setAutoplayBlocked(true);
+          setMusicPlaying(false);
         }
       }
     };
 
-    setupWeddingMarch();
+    setupWeddingSong();
 
     return () => {
       cancelled = true;
       setMusicPlaying(false);
-      if (chimeControllerRef.current) {
-        chimeControllerRef.current.stop();
-        if (chimeControllerRef.current.context?.state !== "closed") {
-          chimeControllerRef.current.context.close().catch(() => {});
-        }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
       }
-      chimeControllerRef.current = null;
+      audioRef.current = null;
     };
   }, []);
 
   const toggleMusic = async () => {
-    if (!chimeControllerRef.current) {
+    if (!audioRef.current) {
       return;
     }
 
     if (musicPlaying) {
-      chimeControllerRef.current.stop();
+      audioRef.current.pause();
       setMusicPlaying(false);
       return;
     }
 
     try {
-      await chimeControllerRef.current.start();
+      await audioRef.current.play();
       setMusicPlaying(true);
       setAutoplayBlocked(false);
+      setSongError("");
     } catch {
       setAutoplayBlocked(true);
     }
@@ -379,7 +285,7 @@ function MarryMe() {
 
         <div className="marry-audio-row">
           <button type="button" onClick={toggleMusic}>
-            {musicPlaying ? "Pause Wedding March" : "Play Wedding March"}
+            {musicPlaying ? "Pause Wedding Song" : "Play Wedding Song"}
           </button>
           {autoplayBlocked ? <p>Tap Play once if your browser blocked autoplay.</p> : null}
           {songError ? <p>{songError}</p> : null}
