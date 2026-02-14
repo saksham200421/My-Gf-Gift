@@ -123,10 +123,10 @@ function MarryMe() {
   useEffect(() => {
     let cancelled = false;
 
-    const setupWeddingChimes = async () => {
+    const setupWeddingMarch = async () => {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) {
-        setSongError("Your browser does not support wedding chime audio.");
+        setSongError("Your browser does not support wedding march audio.");
         return;
       }
 
@@ -134,48 +134,68 @@ function MarryMe() {
       const activeNodes = new Set();
       let patternTimer = null;
 
-      const notePattern = [783.99, 659.25, 523.25, 659.25, 880.0, 783.99];
+      const weddingMarchPattern = [
+        { melody: 392.0, chord: [261.63, 329.63], duration: 0.55 },
+        { melody: 523.25, chord: [261.63, 392.0], duration: 0.55 },
+        { melody: 659.25, chord: [329.63, 523.25], duration: 0.8 },
+        { melody: 587.33, chord: [293.66, 440.0], duration: 0.6 },
+        { melody: 523.25, chord: [261.63, 392.0], duration: 0.9 },
+        { melody: 392.0, chord: [246.94, 392.0], duration: 0.55 },
+        { melody: 493.88, chord: [246.94, 369.99], duration: 0.55 },
+        { melody: 587.33, chord: [293.66, 440.0], duration: 0.8 },
+        { melody: 523.25, chord: [261.63, 392.0], duration: 0.65 },
+        { melody: 493.88, chord: [246.94, 369.99], duration: 0.65 },
+        { melody: 440.0, chord: [220.0, 329.63], duration: 1.1 },
+      ];
 
-      const playBellTone = (frequency, startTime) => {
-        const oscillator = audioContext.createOscillator();
-        const shimmerOscillator = audioContext.createOscillator();
+      const patternDuration =
+        weddingMarchPattern.reduce((sum, note) => sum + note.duration, 0) + 0.9;
+
+      const playOrganTone = (frequency, startTime, duration, gainValue) => {
+        const mainOscillator = audioContext.createOscillator();
+        const octaveOscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        const shimmerGain = audioContext.createGain();
+        const filterNode = audioContext.createBiquadFilter();
 
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(frequency, startTime);
-        shimmerOscillator.type = "triangle";
-        shimmerOscillator.frequency.setValueAtTime(frequency * 2, startTime);
+        mainOscillator.type = "triangle";
+        octaveOscillator.type = "sine";
+        filterNode.type = "lowpass";
+        filterNode.frequency.setValueAtTime(1900, startTime);
+
+        mainOscillator.frequency.setValueAtTime(frequency, startTime);
+        octaveOscillator.frequency.setValueAtTime(frequency * 2, startTime);
 
         gainNode.gain.setValueAtTime(0.0001, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.16, startTime + 0.015);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.9);
+        gainNode.gain.exponentialRampToValueAtTime(gainValue, startTime + 0.03);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
-        shimmerGain.gain.setValueAtTime(0.0001, startTime);
-        shimmerGain.gain.exponentialRampToValueAtTime(0.045, startTime + 0.02);
-        shimmerGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.3);
-
-        oscillator.connect(gainNode);
-        shimmerOscillator.connect(shimmerGain);
+        mainOscillator.connect(filterNode);
+        octaveOscillator.connect(filterNode);
+        filterNode.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        shimmerGain.connect(audioContext.destination);
 
-        oscillator.start(startTime);
-        shimmerOscillator.start(startTime);
-        oscillator.stop(startTime + 2.0);
-        shimmerOscillator.stop(startTime + 1.5);
+        mainOscillator.start(startTime);
+        octaveOscillator.start(startTime);
+        mainOscillator.stop(startTime + duration + 0.03);
+        octaveOscillator.stop(startTime + duration + 0.03);
 
-        activeNodes.add(oscillator);
-        activeNodes.add(shimmerOscillator);
+        activeNodes.add(mainOscillator);
+        activeNodes.add(octaveOscillator);
 
-        oscillator.onended = () => activeNodes.delete(oscillator);
-        shimmerOscillator.onended = () => activeNodes.delete(shimmerOscillator);
+        mainOscillator.onended = () => activeNodes.delete(mainOscillator);
+        octaveOscillator.onended = () => activeNodes.delete(octaveOscillator);
       };
 
       const playPattern = () => {
-        const startTime = audioContext.currentTime + 0.05;
-        notePattern.forEach((frequency, index) => {
-          playBellTone(frequency, startTime + index * 0.5);
+        let cursor = audioContext.currentTime + 0.08;
+
+        weddingMarchPattern.forEach((note) => {
+          playOrganTone(note.melody, cursor, note.duration * 0.95, 0.16);
+          note.chord.forEach((chordNote) => {
+            playOrganTone(chordNote, cursor, note.duration * 0.95, 0.08);
+          });
+          playOrganTone(note.chord[0] / 2, cursor, note.duration * 0.95, 0.05);
+          cursor += note.duration;
         });
       };
 
@@ -187,7 +207,7 @@ function MarryMe() {
           return;
         }
         playPattern();
-        patternTimer = window.setInterval(playPattern, 3400);
+        patternTimer = window.setInterval(playPattern, patternDuration * 1000);
       };
 
       const stop = () => {
@@ -226,7 +246,7 @@ function MarryMe() {
       }
     };
 
-    setupWeddingChimes();
+    setupWeddingMarch();
 
     return () => {
       cancelled = true;
@@ -359,7 +379,7 @@ function MarryMe() {
 
         <div className="marry-audio-row">
           <button type="button" onClick={toggleMusic}>
-            {musicPlaying ? "Pause Wedding Chimes" : "Play Wedding Chimes"}
+            {musicPlaying ? "Pause Wedding March" : "Play Wedding March"}
           </button>
           {autoplayBlocked ? <p>Tap Play once if your browser blocked autoplay.</p> : null}
           {songError ? <p>{songError}</p> : null}
