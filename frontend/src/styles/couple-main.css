@@ -378,18 +378,27 @@
   align-items: center;
 }
 
-.youtube-player-card {
+.now-playing-box {
+  display: grid;
+  gap: 8px;
   border: 1px solid rgba(31, 42, 72, 0.12);
   border-radius: 10px;
-  overflow: hidden;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.95);
 }
 
-.youtube-player-frame {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border: 0;
-  display: block;
+.now-playing-box p {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-600);
+}
+
+.now-playing-box strong {
+  font-size: 13px;
+  color: var(--ink-900);
+  word-break: break-word;
 }
 
 .love-game-wrap {

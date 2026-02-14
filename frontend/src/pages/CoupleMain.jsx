@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   addDashboardTodo,
   deleteDashboardTodo,
-  fetchLatestSongs,
   fetchDashboard,
   resolveYouTubeSong,
   searchSongs,
@@ -30,12 +29,6 @@ const emptyDashboard = {
 
 const foodQuickPicks = ["Pizza", "Pasta", "Biryani", "Sushi", "Burger", "Chaat"];
 const moodQuickPicks = ["Happy", "Calm", "Romantic", "Chaotic", "Tired", "Goofy"];
-const songQuickPicks = [
-  "Perfect - Ed Sheeran",
-  "Until I Found You",
-  "A Thousand Years",
-  "Tum Se Hi",
-];
 const gameFallbackPrompts = [
   "Share one hidden fear and one comfort wish.",
   "Take turns: 3 compliments in 30 seconds.",
@@ -69,7 +62,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [placeError, setPlaceError] = useState("");
   const [songSearchQuery, setSongSearchQuery] = useState("");
   const [songResults, setSongResults] = useState([]);
-  const [latestSongs, setLatestSongs] = useState([]);
   const [songsLoading, setSongsLoading] = useState(false);
   const [songsError, setSongsError] = useState("");
   const [activePreviewId, setActivePreviewId] = useState(null);
@@ -78,6 +70,12 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [youtubeData, setYoutubeData] = useState(null);
   const [youtubeLoading, setYoutubeLoading] = useState(false);
   const [youtubeError, setYoutubeError] = useState("");
+  const [activePlayback, setActivePlayback] = useState({
+    type: "none",
+    label: "Nothing playing",
+    isPlaying: false,
+  });
+  const [youtubePlaybackUrl, setYoutubePlaybackUrl] = useState("");
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -104,18 +102,13 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       });
   }, []);
 
-  useEffect(() => {
-    fetchLatestSongs(authToken)
-      .then((payload) => setLatestSongs(Array.isArray(payload.songs) ? payload.songs : []))
-      .catch(() => setLatestSongs([]));
-  }, [authToken]);
-
   useEffect(
     () => () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      setYoutubePlaybackUrl("");
     },
     []
   );
@@ -244,7 +237,13 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       audioRef.current.currentTime = 0;
       audioRef.current = null;
     }
+    setYoutubePlaybackUrl("");
     setActivePreviewId(null);
+    setActivePlayback({
+      type: "none",
+      label: "Nothing playing",
+      isPlaying: false,
+    });
   };
 
   const togglePreview = async (song) => {
@@ -268,9 +267,18 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       audioRef.current = audio;
       audio.onended = () => {
         setActivePreviewId(null);
+        setActivePlayback((prev) => ({
+          ...prev,
+          isPlaying: false,
+        }));
       };
       await audio.play();
       setActivePreviewId(song.id);
+      setActivePlayback({
+        type: "preview",
+        label: `${song.name} - ${song.artist}`,
+        isPlaying: true,
+      });
     } catch {
       setSongsError("Could not play preview on this browser/session.");
       setActivePreviewId(null);
@@ -323,6 +331,13 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       setYoutubeData(nextData);
       setDashboard((prev) => ({ ...prev, songPick: nextData.watchUrl }));
       await patchDashboard({ songPick: nextData.watchUrl });
+      stopCurrentPreview();
+      setYoutubePlaybackUrl(`${nextData.embedUrl}&autoplay=1`);
+      setActivePlayback({
+        type: "youtube",
+        label: nextData.watchUrl,
+        isPlaying: true,
+      });
     } catch (error) {
       setYoutubeData(null);
       setYoutubeError(error.message || "Could not resolve this YouTube link.");
@@ -361,6 +376,33 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       active = false;
     };
   }, [authToken, dashboard.songPick]);
+
+  const toggleNowPlaying = async () => {
+    if (activePlayback.type === "preview" && audioRef.current) {
+      if (activePlayback.isPlaying) {
+        audioRef.current.pause();
+        setActivePlayback((prev) => ({ ...prev, isPlaying: false }));
+      } else {
+        try {
+          await audioRef.current.play();
+          setActivePlayback((prev) => ({ ...prev, isPlaying: true }));
+        } catch {
+          setSongsError("Could not resume playback.");
+        }
+      }
+      return;
+    }
+
+    if (activePlayback.type === "youtube" && youtubeData) {
+      if (activePlayback.isPlaying) {
+        setYoutubePlaybackUrl("");
+        setActivePlayback((prev) => ({ ...prev, isPlaying: false }));
+      } else {
+        setYoutubePlaybackUrl(`${youtubeData.embedUrl}&autoplay=1`);
+        setActivePlayback((prev) => ({ ...prev, isPlaying: true }));
+      }
+    }
+  };
 
   const handleSearchPlace = async () => {
     const query = placeQuery.trim() || dashboard.wannaGoTo?.trim();
@@ -463,14 +505,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
 
         <div className="couple-card">
           <h3>Song selection area</h3>
-          <input
-            value={dashboard.songPick}
-            onChange={(event) =>
-              setDashboard((prev) => ({ ...prev, songPick: event.target.value }))
-            }
-            onBlur={() => patchDashboard({ songPick: dashboard.songPick })}
-            placeholder="Song title or YouTube link"
-          />
           <div className="todo-input-row">
             <input
               value={youtubeInput}
@@ -482,18 +516,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             </button>
           </div>
           {youtubeError ? <p>{youtubeError}</p> : null}
-          {youtubeData ? (
-            <div className="youtube-player-card">
-              <iframe
-                className="youtube-player-frame"
-                src={youtubeData.embedUrl}
-                title="Selected YouTube song"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                loading="lazy"
-              />
-            </div>
-          ) : null}
           <div className="todo-input-row">
             <input
               value={songSearchQuery}
@@ -533,59 +555,37 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             </div>
           ) : null}
 
-          {latestSongs.length ? (
-            <div>
-              <p>Latest picks</p>
-              <div className="song-results">
-                {latestSongs.slice(0, 8).map((song) => (
-                  <div className="song-item" key={`latest-${song.id}`}>
-                    <span>{song.name} - {song.artist}</span>
-                    <div className="song-actions">
-                      <button type="button" onClick={() => applySongPick(song)}>
-                        Add
-                      </button>
-                      <button type="button" onClick={() => togglePreview(song)}>
-                        {previewLoadingId === song.id
-                          ? "Loading..."
-                          : activePreviewId === song.id
-                            ? "Pause"
-                            : "Preview"}
-                      </button>
-                      {song.url ? (
-                        <a className="chip-link" href={song.url} target="_blank" rel="noreferrer">
-                          Open
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          <div className="chip-row">
-            {songQuickPicks.map((song) => (
+          <div className="now-playing-box">
+            <p>Active playing rn</p>
+            <strong>{activePlayback.label}</strong>
+            <div className="song-actions">
               <button
-                key={song}
                 type="button"
-                onClick={() => {
-                  setDashboard((prev) => ({ ...prev, songPick: song }));
-                  patchDashboard({ songPick: song });
-                }}
+                onClick={toggleNowPlaying}
+                disabled={activePlayback.type === "none"}
               >
-                {song}
+                {activePlayback.isPlaying ? "Pause" : "Play"}
               </button>
-            ))}
-            {dashboard.songPick ? (
-              <a
-                className="chip-link"
-                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(dashboard.songPick)}`}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={stopCurrentPreview}
+                disabled={activePlayback.type === "none"}
               >
-                Open on YouTube
-              </a>
-            ) : null}
+                Stop
+              </button>
+            </div>
           </div>
+
+          {youtubePlaybackUrl ? (
+            <iframe
+              title="Hidden YouTube player"
+              src={youtubePlaybackUrl}
+              width="1"
+              height="1"
+              style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+              allow="autoplay; encrypted-media"
+            />
+          ) : null}
         </div>
       </section>
 
