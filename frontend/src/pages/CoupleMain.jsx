@@ -21,14 +21,6 @@ const dashboardGalleryModules = import.meta.glob(
   }
 );
 
-const dashboardGalleryVideoModules = import.meta.glob(
-  "../assets/gallery-media/*.{mp4,webm,ogg,mov,m4v}",
-  {
-    eager: true,
-    import: "default",
-  }
-);
-
 const emptyDashboard = {
   eatToday: "",
   moodToday: "",
@@ -101,26 +93,11 @@ function CoupleMain({ authToken, authUser, onLogout }) {
 
   const dashboardGalleryPreview = useMemo(() => {
     const images = Object.values(dashboardGalleryModules).filter(Boolean);
-    const videos = Object.values(dashboardGalleryVideoModules).filter(Boolean);
-
-    const media = [
-      ...images.map((src, index) => ({
-        id: `dash-image-${index}`,
-        type: "image",
-        src,
-      })),
-      ...videos.map((src, index) => ({
-        id: `dash-video-${index}`,
-        type: "video",
-        src,
-      })),
-    ];
-
-    return media;
+    return images;
   }, []);
 
   const activeDashboardMedia =
-    dashboardGalleryPreview[miniGalleryIndex % Math.max(dashboardGalleryPreview.length, 1)] || null;
+    dashboardGalleryPreview[miniGalleryIndex % Math.max(dashboardGalleryPreview.length, 1)] || "";
 
   useEffect(() => {
     fetchDashboard(authToken)
@@ -897,27 +874,15 @@ function CoupleMain({ authToken, authUser, onLogout }) {
           <h3>Mini Gallery</h3>
           {activeDashboardMedia ? (
             <div className="dash-mini-gallery-single">
-              {activeDashboardMedia.type === "video" ? (
-                <video
-                  key={activeDashboardMedia.id}
-                  className="dash-mini-gallery-media"
-                  src={activeDashboardMedia.src}
-                  muted
-                  loop
-                  autoPlay
-                  playsInline
-                  preload="auto"
-                />
-              ) : (
-                <div
-                  key={activeDashboardMedia.id}
-                  className="dash-mini-gallery-media"
-                  style={{ backgroundImage: `url(${activeDashboardMedia.src})` }}
-                />
-              )}
+              <img
+                key={activeDashboardMedia}
+                className="dash-mini-gallery-media"
+                src={activeDashboardMedia}
+                alt="Gallery slideshow preview"
+              />
             </div>
           ) : (
-            <p>Add media to gallery to show slideshow preview here.</p>
+            <p>Add images to gallery to show slideshow preview here.</p>
           )}
           <button type="button" onClick={() => navigate("/gallery")}>
             Open Full Gallery
