@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   addDashboardTodo,
   deleteDashboardTodo,
@@ -42,6 +43,7 @@ const gameFallbackPrompts = [
 ];
 
 function CoupleMain({ authToken, authUser, onLogout }) {
+  const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(emptyDashboard);
   const [monthDate, setMonthDate] = useState(() => {
     const now = new Date();
@@ -843,6 +845,9 @@ function CoupleMain({ authToken, authUser, onLogout }) {
           <p className="saving-text">
             Last save: {lastSavedAt ? lastSavedAt.toLocaleTimeString() : "No local save timestamp"}
           </p>
+          <button type="button" onClick={() => navigate("/marry-me")}>
+            Wedding Certificate
+          </button>
           <button type="button" onClick={onLogout}>
             Logout
           </button>

@@ -5,6 +5,7 @@ import CoupleMain from "./pages/CoupleMain";
 import Hub from "./pages/Hub";
 import Letters from "./pages/Letters";
 import Login from "./pages/Login";
+import MarryMe from "./pages/MarryMe";
 import ProtectedRoute from "./components/ProtectedRoute";
 import {
   clearAuthSession,
@@ -57,6 +58,7 @@ function App() {
           />
           <Route path="/hub" element={<Hub />} />
           <Route path="/letters" element={<Letters authToken={authToken} />} />
+          <Route path="/marry-me" element={<MarryMe />} />
         </Route>
       </Routes>
     </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const tiles = [
   {
@@ -45,6 +46,7 @@ const tiles = [
 
 function Hub() {
   const [selectedId, setSelectedId] = useState("02");
+  const navigate = useNavigate();
 
   const contentMap = useMemo(
     () => ({
@@ -160,11 +162,13 @@ function Hub() {
             <span>Warm</span>
             <span>Us</span>
           </div>
-          <button type="button">Read</button>
+          <button type="button" onClick={() => navigate("/marry-me")}>
+            Wedding Certificate
+          </button>
         </div>
       ),
     }),
-    []
+    [navigate]
   );
 
   const renderTileContent = (id, size) => (
