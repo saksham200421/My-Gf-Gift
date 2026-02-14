@@ -44,6 +44,15 @@ function mapDashboard(dashboard) {
     wannaGoTo: dashboard.wannaGoTo,
     highlightedDates: dashboard.highlightedDates,
     specialOccasions: Array.isArray(dashboard.specialOccasions) ? dashboard.specialOccasions : [],
+    messageHistory: Array.isArray(dashboard.messageHistory)
+      ? dashboard.messageHistory
+          .slice()
+          .sort((first, second) => first.createdAt - second.createdAt)
+          .map((message) => ({
+            text: message.text,
+            createdAt: message.createdAt,
+          }))
+      : [],
     thoughtToday: dashboard.thoughtToday,
     madReason: dashboard.madReason,
     gratitudeNote: dashboard.gratitudeNote,
@@ -271,6 +280,24 @@ async function sendPing(req, res) {
   return res.status(202).json({ message: `${fromUser.name} pinged you` });
 }
 
+async function addChatMessage(req, res) {
+  const text = String(req.body?.text || "").trim();
+
+  if (!text) {
+    return res.status(400).json({ message: "Message text is required" });
+  }
+
+  const dashboard = await ensureDashboard(req.auth.userId);
+  dashboard.messageHistory.push({ text, createdAt: new Date() });
+
+  if (dashboard.messageHistory.length > 300) {
+    dashboard.messageHistory = dashboard.messageHistory.slice(-300);
+  }
+
+  await dashboard.save();
+  return res.status(201).json({ dashboard: mapDashboard(dashboard) });
+}
+
 module.exports = {
   getDashboard,
   updateDashboard,
@@ -281,4 +308,5 @@ module.exports = {
   upsertSpecialOccasion,
   deleteSpecialOccasion,
   sendPing,
+  addChatMessage,
 };

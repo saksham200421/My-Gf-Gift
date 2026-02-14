@@ -121,6 +121,14 @@ export async function sendDashboardPing(token) {
   });
 }
 
+export async function addDashboardChatMessage(token, text) {
+  return apiRequest("/api/dashboard/chat-messages", {
+    method: "POST",
+    token,
+    body: { text },
+  });
+}
+
 export async function addDashboardTodo(token, text) {
   return apiRequest("/api/dashboard/todos", {
     method: "POST",

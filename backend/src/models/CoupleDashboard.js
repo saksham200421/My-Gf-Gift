@@ -38,6 +38,24 @@ const specialOccasionSchema = new mongoose.Schema(
   }
 );
 
+const messageHistoryItemSchema = new mongoose.Schema(
+  {
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 500,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const coupleDashboardSchema = new mongoose.Schema(
   {
     userId: {
@@ -77,6 +95,10 @@ const coupleDashboardSchema = new mongoose.Schema(
     },
     specialOccasions: {
       type: [specialOccasionSchema],
+      default: [],
+    },
+    messageHistory: {
+      type: [messageHistoryItemSchema],
       default: [],
     },
     todos: {

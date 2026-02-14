@@ -10,6 +10,7 @@ const {
   updateTodo,
   deleteTodo,
   sendPing,
+  addChatMessage,
 } = require("../controllers/dashboardController");
 const { requireAuth } = require("../middleware/auth");
 
@@ -21,6 +22,7 @@ router.patch("/highlighted-dates", requireAuth, toggleHighlightedDate);
 router.post("/special-occasion", requireAuth, upsertSpecialOccasion);
 router.delete("/special-occasion/:dateKey", requireAuth, deleteSpecialOccasion);
 router.post("/ping", requireAuth, sendPing);
+router.post("/chat-messages", requireAuth, addChatMessage);
 router.post("/todos", requireAuth, addTodo);
 router.patch("/todos/:todoId", requireAuth, updateTodo);
 router.delete("/todos/:todoId", requireAuth, deleteTodo);

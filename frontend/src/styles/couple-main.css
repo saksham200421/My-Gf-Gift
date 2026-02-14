@@ -301,6 +301,60 @@
   color: var(--ink-600);
 }
 
+.message-timeline {
+  display: grid;
+  gap: 8px;
+}
+
+.message-timeline > div {
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.message-timeline strong {
+  color: var(--ink-900);
+  font-size: 13px;
+}
+
+.message-card,
+.message-card * {
+  text-align: left;
+}
+
+.message-history {
+  max-height: 220px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.message-item {
+  border: 1px solid rgba(31, 42, 72, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.message-item p {
+  margin: 0;
+  color: var(--ink-900);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-item span,
+.message-empty {
+  font-size: 12px;
+  color: var(--ink-600);
+}
+
 .todo-input-row {
   display: grid;
   grid-template-columns: 1fr auto;

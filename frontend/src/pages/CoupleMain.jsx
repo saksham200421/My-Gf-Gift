@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  addDashboardChatMessage,
   addDashboardTodo,
   deleteDashboardOccasion,
   deleteDashboardTodo,
@@ -30,6 +31,7 @@ const emptyDashboard = {
   songPick: "",
   highlightedDates: [],
   specialOccasions: [],
+  messageHistory: [],
   thoughtToday: "",
   madReason: "",
   gratitudeNote: "",
@@ -120,6 +122,9 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [datePlanBudget, setDatePlanBudget] = useState("low");
   const [datePlanTime, setDatePlanTime] = useState("evening");
   const [winStars, setWinStars] = useState(3);
+  const [messageDraft, setMessageDraft] = useState("");
+  const [chatStatus, setChatStatus] = useState("");
+  const [chatSending, setChatSending] = useState(false);
   const [placeQuery, setPlaceQuery] = useState("");
   const [placeData, setPlaceData] = useState(null);
   const [placeLoading, setPlaceLoading] = useState(false);
@@ -556,6 +561,27 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       setPingStatus(payload.message || "Ping sent.");
     } catch (error) {
       setPingStatus(error.message || "Could not send ping.");
+    }
+  };
+
+  const handleSendMessage = async () => {
+    const text = messageDraft.trim();
+    if (!text) {
+      setChatStatus("Type a message first.");
+      return;
+    }
+
+    setChatSending(true);
+    setChatStatus("");
+    try {
+      const payload = await addDashboardChatMessage(authToken, text);
+      setDashboard(payload.dashboard || emptyDashboard);
+      setMessageDraft("");
+      setLastSavedAt(new Date());
+    } catch (error) {
+      setChatStatus(error.message || "Could not send message.");
+    } finally {
+      setChatSending(false);
     }
   };
 
@@ -1059,6 +1085,87 @@ function CoupleMain({ authToken, authUser, onLogout }) {
               Generate win note
             </button>
           </div>
+        </div>
+
+        <div className="couple-card">
+          <h2>Couple Bucket Spins</h2>
+          <p>Tap once and instantly pick a tiny romantic action.</p>
+          <div className="chip-row">
+            <button
+              type="button"
+              onClick={() => setDashboard((prev) => ({ ...prev, thoughtToday: "One selfie + one hug challenge in the next 5 mins." }))}
+            >
+              Selfie + Hug
+            </button>
+            <button
+              type="button"
+              onClick={() => setDashboard((prev) => ({ ...prev, thoughtToday: "Share one secret crush-detail about each other today." }))}
+            >
+              Secret Detail
+            </button>
+            <button
+              type="button"
+              onClick={() => setDashboard((prev) => ({ ...prev, thoughtToday: "Plan a 20-minute no-phone date corner tonight." }))}
+            >
+              No-phone Date
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => patchDashboard({ thoughtToday: dashboard.thoughtToday })}
+          >
+            Save To Thoughts
+          </button>
+        </div>
+
+        <div className="couple-card">
+          <h2>Memory Spark Timeline</h2>
+          <div className="message-timeline">
+            <div>
+              <strong>First memory</strong>
+              <p>{dashboard.gratitudeNote?.trim() || "Add your first sweet memory in appreciation box."}</p>
+            </div>
+            <div>
+              <strong>Today’s vibe</strong>
+              <p>{dashboard.moodToday?.trim() || "Set today’s mood on the left panel."}</p>
+            </div>
+            <div>
+              <strong>Next date idea</strong>
+              <p>{dashboard.datePlan?.trim() || "Drop a mini date plan to keep the streak alive."}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="couple-card message-card">
+          <h2>Message Box</h2>
+          <div className="message-history" role="log" aria-live="polite">
+            {(dashboard.messageHistory || []).length ? (
+              (dashboard.messageHistory || []).map((item, index) => (
+                <div key={`${item.createdAt || "msg"}-${index}`} className="message-item">
+                  <p>{item.text}</p>
+                  <span>
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleString()
+                      : "Just now"}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="message-empty">No messages yet. Start chatting.</p>
+            )}
+          </div>
+          <div className="todo-input-row">
+            <input
+              value={messageDraft}
+              onChange={(event) => setMessageDraft(event.target.value)}
+              placeholder="Type message"
+              maxLength={500}
+            />
+            <button type="button" onClick={handleSendMessage} disabled={chatSending}>
+              {chatSending ? "Sending..." : "Send"}
+            </button>
+          </div>
+          {chatStatus ? <p>{chatStatus}</p> : null}
         </div>
       </section>
 
