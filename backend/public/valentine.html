@@ -184,6 +184,32 @@
         transition: left 220ms ease, top 220ms ease, transform 0.2s ease;
       }
 
+      .no-chase-hint {
+        position: fixed;
+        left: -999px;
+        top: -999px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(224, 107, 143, 0.4);
+        color: #a42d56;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        box-shadow: 0 10px 24px rgba(224, 107, 143, 0.24);
+        pointer-events: none;
+        z-index: 4;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateY(-6px);
+        transition: left 220ms ease, top 220ms ease, opacity 180ms ease, transform 180ms ease;
+      }
+
+      .no-chase-hint.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
       .footer {
         text-align: center;
         color: var(--ink-500);
@@ -228,10 +254,17 @@
       const heartsCanvas = document.getElementById("hearts-bg");
       const heartsCtx = heartsCanvas.getContext("2d");
       let lastMove = 0;
+      let chaseCount = 0;
+      let lastChaseAt = 0;
+      const CHASE_RESET_MS = 1800;
       const fallingHearts = [];
       const shootingHearts = [];
       const diagonalShootingHearts = [];
       const lingeringTrails = [];
+      const noChaseHint = document.createElement("div");
+      noChaseHint.className = "no-chase-hint";
+      noChaseHint.textContent = "reallyy?? goo click yess";
+      document.body.appendChild(noChaseHint);
       const heartPalette = [
         "#ff5ea8",
         "#ff7fb0",
@@ -527,6 +560,33 @@
 
         noButton.style.left = `${left}px`;
         noButton.style.top = `${top}px`;
+        updateNoChaseHintPosition();
+      };
+
+      const updateNoChaseHintPosition = () => {
+        if (!noChaseHint.classList.contains("show")) {
+          return;
+        }
+
+        const noRect = noButton.getBoundingClientRect();
+        const hintRect = noChaseHint.getBoundingClientRect();
+        const padding = 8;
+        const hintLeft = Math.max(
+          padding,
+          Math.min(window.innerWidth - hintRect.width - padding, noRect.left + noRect.width + 10)
+        );
+        const hintTop = Math.max(
+          padding,
+          Math.min(window.innerHeight - hintRect.height - padding, noRect.top - hintRect.height - 6)
+        );
+
+        noChaseHint.style.left = `${hintLeft}px`;
+        noChaseHint.style.top = `${hintTop}px`;
+      };
+
+      const showNoChaseHint = () => {
+        noChaseHint.classList.add("show");
+        updateNoChaseHintPosition();
       };
 
       const moveNoButton = () => {
@@ -539,6 +599,7 @@
 
         noButton.style.left = `${nextX}px`;
         noButton.style.top = `${nextY}px`;
+        updateNoChaseHintPosition();
       };
 
       const handleChase = (event) => {
@@ -555,6 +616,16 @@
         const distance = Math.hypot(dx, dy);
 
         if (distance < 110) {
+          if (now - lastChaseAt > CHASE_RESET_MS) {
+            chaseCount = 0;
+          }
+          chaseCount += 1;
+          lastChaseAt = now;
+
+          if (chaseCount > 5) {
+            showNoChaseHint();
+          }
+
           lastMove = now;
           moveNoButton();
         }
@@ -565,6 +636,7 @@
       noButton.addEventListener("pointerenter", moveNoButton);
       noButton.addEventListener("focus", moveNoButton);
       yesButton.addEventListener("click", () => {
+        noChaseHint.classList.remove("show");
         yesButton.textContent = "Yay!";
         yesButton.style.background = "#e06b8f";
         yesButton.style.boxShadow = "0 12px 30px rgba(224, 107, 143, 0.35)";

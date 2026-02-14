@@ -45,7 +45,7 @@ function MarryMe() {
   const [responseLabel, setResponseLabel] = useState("");
   const [showStamp, setShowStamp] = useState(false);
   const [noChaosTick, setNoChaosTick] = useState(0);
-  const audioRef = useRef(null);
+  const chimeControllerRef = useRef(null);
 
   const galleryMedia = useMemo(() => {
     const marriageImages = Object.values(marriageImageModules)
@@ -123,77 +123,137 @@ function MarryMe() {
   useEffect(() => {
     let cancelled = false;
 
-    const setupWeddingSong = async () => {
-      try {
-        const response = await fetch(
-          "https://itunes.apple.com/search?term=wedding%20song&entity=song&limit=1"
-        );
-        if (!response.ok) {
-          throw new Error("Music provider unavailable");
+    const setupWeddingChimes = async () => {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        setSongError("Your browser does not support wedding chime audio.");
+        return;
+      }
+
+      const audioContext = new AudioContextClass();
+      const activeNodes = new Set();
+      let patternTimer = null;
+
+      const notePattern = [783.99, 659.25, 523.25, 659.25, 880.0, 783.99];
+
+      const playBellTone = (frequency, startTime) => {
+        const oscillator = audioContext.createOscillator();
+        const shimmerOscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        const shimmerGain = audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+        shimmerOscillator.type = "triangle";
+        shimmerOscillator.frequency.setValueAtTime(frequency * 2, startTime);
+
+        gainNode.gain.setValueAtTime(0.0001, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.16, startTime + 0.015);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.9);
+
+        shimmerGain.gain.setValueAtTime(0.0001, startTime);
+        shimmerGain.gain.exponentialRampToValueAtTime(0.045, startTime + 0.02);
+        shimmerGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.3);
+
+        oscillator.connect(gainNode);
+        shimmerOscillator.connect(shimmerGain);
+        gainNode.connect(audioContext.destination);
+        shimmerGain.connect(audioContext.destination);
+
+        oscillator.start(startTime);
+        shimmerOscillator.start(startTime);
+        oscillator.stop(startTime + 2.0);
+        shimmerOscillator.stop(startTime + 1.5);
+
+        activeNodes.add(oscillator);
+        activeNodes.add(shimmerOscillator);
+
+        oscillator.onended = () => activeNodes.delete(oscillator);
+        shimmerOscillator.onended = () => activeNodes.delete(shimmerOscillator);
+      };
+
+      const playPattern = () => {
+        const startTime = audioContext.currentTime + 0.05;
+        notePattern.forEach((frequency, index) => {
+          playBellTone(frequency, startTime + index * 0.5);
+        });
+      };
+
+      const start = async () => {
+        if (audioContext.state === "suspended") {
+          await audioContext.resume();
         }
-
-        const payload = await response.json();
-        const previewUrl = payload?.results?.[0]?.previewUrl;
-
-        if (!previewUrl) {
-          throw new Error("Preview unavailable");
-        }
-
-        if (cancelled) {
+        if (patternTimer) {
           return;
         }
+        playPattern();
+        patternTimer = window.setInterval(playPattern, 3400);
+      };
 
-        const audio = new Audio(previewUrl);
-        audio.loop = true;
-        audio.volume = 0.35;
-        audioRef.current = audio;
+      const stop = () => {
+        if (patternTimer) {
+          window.clearInterval(patternTimer);
+          patternTimer = null;
+        }
+        activeNodes.forEach((node) => {
+          try {
+            node.stop();
+          } catch {
+            return;
+          }
+        });
+        activeNodes.clear();
+      };
 
-        try {
-          await audio.play();
-          if (!cancelled) {
-            setMusicPlaying(true);
-            setAutoplayBlocked(false);
-            setSongError("");
-          }
-        } catch {
-          if (!cancelled) {
-            setMusicPlaying(false);
-            setAutoplayBlocked(true);
-          }
+      chimeControllerRef.current = {
+        start,
+        stop,
+        context: audioContext,
+      };
+
+      try {
+        await start();
+        if (!cancelled) {
+          setMusicPlaying(true);
+          setAutoplayBlocked(false);
+          setSongError("");
         }
       } catch {
         if (!cancelled) {
-          setSongError("Could not load Apple Music preview right now.");
+          setMusicPlaying(false);
+          setAutoplayBlocked(true);
         }
       }
     };
 
-    setupWeddingSong();
+    setupWeddingChimes();
 
     return () => {
       cancelled = true;
       setMusicPlaying(false);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+      if (chimeControllerRef.current) {
+        chimeControllerRef.current.stop();
+        if (chimeControllerRef.current.context?.state !== "closed") {
+          chimeControllerRef.current.context.close().catch(() => {});
+        }
       }
-      audioRef.current = null;
+      chimeControllerRef.current = null;
     };
   }, []);
 
   const toggleMusic = async () => {
-    if (!audioRef.current) {
+    if (!chimeControllerRef.current) {
       return;
     }
 
     if (musicPlaying) {
-      audioRef.current.pause();
+      chimeControllerRef.current.stop();
       setMusicPlaying(false);
       return;
     }
 
     try {
-      await audioRef.current.play();
+      await chimeControllerRef.current.start();
       setMusicPlaying(true);
       setAutoplayBlocked(false);
     } catch {
@@ -299,7 +359,7 @@ function MarryMe() {
 
         <div className="marry-audio-row">
           <button type="button" onClick={toggleMusic}>
-            {musicPlaying ? "Pause Wedding Song" : "Play Wedding Song"}
+            {musicPlaying ? "Pause Wedding Chimes" : "Play Wedding Chimes"}
           </button>
           {autoplayBlocked ? <p>Tap Play once if your browser blocked autoplay.</p> : null}
           {songError ? <p>{songError}</p> : null}
