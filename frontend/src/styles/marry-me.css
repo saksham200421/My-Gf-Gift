@@ -23,8 +23,12 @@
 .marry-slide {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
   transition: opacity 0.9s ease;
+  object-fit: cover;
+  object-position: center;
   background-size: cover;
   background-position: center;
   transform: scale(1.05);
@@ -58,6 +62,22 @@
   box-shadow: 0 18px 40px rgba(31, 42, 72, 0.28);
   color: var(--ink-900);
   backdrop-filter: blur(3px);
+}
+
+.marry-stamp {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  border: 3px solid rgba(178, 24, 43, 0.85);
+  color: rgba(178, 24, 43, 0.9);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 7px 10px;
+  border-radius: 8px;
+  transform: rotate(-11deg) scale(0.85);
+  background: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  animation: stampIn 0.35s ease forwards;
 }
 
 .marry-kicker {
@@ -135,6 +155,41 @@
   font-family: "Playfair Display", "Times New Roman", serif;
 }
 
+.marry-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.marry-choice-row button {
+  border: 1px solid rgba(31, 42, 72, 0.16);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font: inherit;
+  background: #fff;
+  color: var(--ink-900);
+  cursor: pointer;
+}
+
+.marry-choice-yes {
+  background: rgba(238, 255, 245, 0.92);
+}
+
+.marry-choice-no {
+  background: rgba(255, 234, 238, 0.96);
+}
+
+.marry-choice-no.is-chaos {
+  animation: noChaos 0.42s steps(2, end) 1;
+  transform-origin: center;
+}
+
+.marry-response {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ink-800);
+}
+
 .marry-audio-row {
   display: flex;
   flex-wrap: wrap;
@@ -156,6 +211,46 @@
   margin: 0;
   color: var(--ink-700);
   font-size: 14px;
+}
+
+@keyframes stampIn {
+  0% {
+    opacity: 0;
+    transform: rotate(-17deg) scale(0.62);
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(-10deg) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-11deg) scale(1);
+  }
+}
+
+@keyframes noChaos {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    filter: contrast(1);
+  }
+  20% {
+    transform: translate(12px, -8px) rotate(8deg) scale(1.14);
+    filter: saturate(2.1);
+  }
+  40% {
+    transform: translate(-16px, 10px) rotate(-10deg) scale(0.94);
+  }
+  60% {
+    transform: translate(18px, 3px) rotate(12deg) scale(1.18);
+    filter: hue-rotate(100deg);
+  }
+  80% {
+    transform: translate(-11px, -9px) rotate(-12deg) scale(0.9);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    filter: none;
+  }
 }
 
 @media (max-width: 720px) {

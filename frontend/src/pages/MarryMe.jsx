@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import fallbackImage from "../assets/Omegle_(2).png";
 
-const galleryModules = import.meta.glob(
+const marriageImageModules = import.meta.glob(
   "../assets/marriage-photos/*.{png,jpg,jpeg,webp,avif,gif}",
   {
     eager: true,
@@ -9,21 +9,17 @@ const galleryModules = import.meta.glob(
   }
 );
 
+const galleryImageModules = import.meta.glob("../assets/gallery-media/*.{png,jpg,jpeg,webp,avif,gif}", {
+  eager: true,
+  import: "default",
+});
+
+const galleryVideoModules = import.meta.glob("../assets/gallery-media/*.{mp4,webm,ogg,mov,m4v}", {
+  eager: true,
+  import: "default",
+});
+
 const GRID_SLOTS = 6;
-const demoStockImages = [
-  "https://picsum.photos/seed/wedding-1/1200/900",
-  "https://picsum.photos/seed/wedding-2/1200/900",
-  "https://picsum.photos/seed/wedding-3/1200/900",
-  "https://picsum.photos/seed/wedding-4/1200/900",
-  "https://picsum.photos/seed/wedding-5/1200/900",
-  "https://picsum.photos/seed/wedding-6/1200/900",
-  "https://picsum.photos/seed/wedding-7/1200/900",
-  "https://picsum.photos/seed/wedding-8/1200/900",
-  "https://picsum.photos/seed/wedding-9/1200/900",
-  "https://picsum.photos/seed/wedding-10/1200/900",
-  "https://picsum.photos/seed/wedding-11/1200/900",
-  "https://picsum.photos/seed/wedding-12/1200/900",
-];
 
 const shuffleList = (list) => {
   const clone = [...list];
@@ -45,27 +41,67 @@ function MarryMe() {
   );
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
+  const [songError, setSongError] = useState("");
+  const [responseLabel, setResponseLabel] = useState("");
+  const [showStamp, setShowStamp] = useState(false);
+  const [noChaosTick, setNoChaosTick] = useState(0);
   const audioRef = useRef(null);
 
-  const galleryImages = useMemo(() => {
-    const collected = Object.values(galleryModules).filter(Boolean);
-    return collected.length
-      ? [...collected, ...demoStockImages]
-      : [fallbackImage, ...demoStockImages];
+  const galleryMedia = useMemo(() => {
+    const marriageImages = Object.values(marriageImageModules)
+      .filter(Boolean)
+      .map((src, index) => ({
+        id: `marriage-image-${index}`,
+        type: "image",
+        src,
+      }));
+
+    const galleryImages = Object.values(galleryImageModules)
+      .filter(Boolean)
+      .map((src, index) => ({
+        id: `gallery-image-${index}`,
+        type: "image",
+        src,
+      }));
+
+    const galleryVideos = Object.values(galleryVideoModules)
+      .filter(Boolean)
+      .map((src, index) => ({
+        id: `gallery-video-${index}`,
+        type: "video",
+        src,
+      }));
+
+    const merged = [...marriageImages, ...galleryImages, ...galleryVideos];
+    if (!merged.length) {
+      return [
+        {
+          id: "fallback-image",
+          type: "image",
+          src: fallbackImage,
+        },
+      ];
+    }
+
+    return merged;
   }, []);
 
   const slidesByPanel = useMemo(() => {
-    const shuffled = shuffleList(galleryImages);
+    const shuffled = shuffleList(galleryMedia);
     const buckets = Array.from({ length: GRID_SLOTS }, () => []);
 
-    shuffled.forEach((image, imageIndex) => {
-      buckets[imageIndex % GRID_SLOTS].push(image);
+    shuffled.forEach((item, itemIndex) => {
+      buckets[itemIndex % GRID_SLOTS].push(item);
     });
 
-    return buckets.map((bucket, bucketIndex) =>
-      bucket.length ? bucket : [galleryImages[bucketIndex % galleryImages.length]]
-    );
-  }, [galleryImages]);
+    return buckets.map((bucket, bucketIndex) => {
+      if (bucket.length) {
+        return bucket;
+      }
+
+      return [galleryMedia[bucketIndex % galleryMedia.length]];
+    });
+  }, [galleryMedia]);
 
   useEffect(() => {
     const timers = slidesByPanel.map((bucket, bucketIndex) => {
@@ -85,25 +121,62 @@ function MarryMe() {
   }, [slidesByPanel]);
 
   useEffect(() => {
-    const audio = new Audio("/wedding-song.mp3");
-    audio.loop = true;
-    audio.volume = 0.35;
-    audioRef.current = audio;
+    let cancelled = false;
 
-    audio
-      .play()
-      .then(() => {
-        setMusicPlaying(true);
-        setAutoplayBlocked(false);
-      })
-      .catch(() => {
-        setMusicPlaying(false);
-        setAutoplayBlocked(true);
-      });
+    const setupWeddingSong = async () => {
+      try {
+        const response = await fetch(
+          "https://itunes.apple.com/search?term=wedding%20song&entity=song&limit=1"
+        );
+        if (!response.ok) {
+          throw new Error("Music provider unavailable");
+        }
+
+        const payload = await response.json();
+        const previewUrl = payload?.results?.[0]?.previewUrl;
+
+        if (!previewUrl) {
+          throw new Error("Preview unavailable");
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const audio = new Audio(previewUrl);
+        audio.loop = true;
+        audio.volume = 0.35;
+        audioRef.current = audio;
+
+        try {
+          await audio.play();
+          if (!cancelled) {
+            setMusicPlaying(true);
+            setAutoplayBlocked(false);
+            setSongError("");
+          }
+        } catch {
+          if (!cancelled) {
+            setMusicPlaying(false);
+            setAutoplayBlocked(true);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setSongError("Could not load Apple Music preview right now.");
+        }
+      }
+    };
+
+    setupWeddingSong();
 
     return () => {
-      audio.pause();
-      audio.currentTime = 0;
+      cancelled = true;
+      setMusicPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       audioRef.current = null;
     };
   }, []);
@@ -128,17 +201,45 @@ function MarryMe() {
     }
   };
 
+  const triggerYesStamp = () => {
+    setResponseLabel("It is ALWAYS a YES 💍");
+    setShowStamp(false);
+    window.setTimeout(() => setShowStamp(true), 10);
+  };
+
+  const handleYesClick = () => {
+    triggerYesStamp();
+  };
+
+  const handleNoClick = () => {
+    setNoChaosTick((prev) => prev + 1);
+    triggerYesStamp();
+  };
+
   return (
     <main className="marry-page">
       <section className="marry-slideshow-grid" aria-hidden="true">
         {slidesByPanel.map((slides, panelIndex) => (
           <div className="marry-slide-panel" key={`panel-${panelIndex}`}>
             {slides.map((slide, slideIndex) => (
-              <div
-                className={`marry-slide${activeIndexes[panelIndex] === slideIndex ? " is-active" : ""}`}
-                key={`${panelIndex}-${slideIndex}`}
-                style={{ backgroundImage: `url(${slide})` }}
-              />
+              slide.type === "video" ? (
+                <video
+                  className={`marry-slide${activeIndexes[panelIndex] === slideIndex ? " is-active" : ""}`}
+                  key={`${panelIndex}-${slide.id}`}
+                  src={slide.src}
+                  muted
+                  loop
+                  playsInline
+                  autoPlay
+                  preload="auto"
+                />
+              ) : (
+                <div
+                  className={`marry-slide${activeIndexes[panelIndex] === slideIndex ? " is-active" : ""}`}
+                  key={`${panelIndex}-${slide.id}`}
+                  style={{ backgroundImage: `url(${slide.src})` }}
+                />
+              )
             ))}
           </div>
         ))}
@@ -147,6 +248,7 @@ function MarryMe() {
       <div className="marry-overlay" />
 
       <section className="marry-certificate" role="region" aria-label="Marriage certificate">
+        {showStamp ? <div className="marry-stamp">APPROVED · YES</div> : null}
         <p className="marry-kicker">For a Lifetime of Love</p>
         <h1>Will You Marry Me?</h1>
         <p className="marry-subtitle">Officially unofficial, but emotionally very real.</p>
@@ -183,11 +285,25 @@ function MarryMe() {
           <span>{partnerTwo || "Her Name"}</span>
         </div>
 
+        <div className="marry-choice-row">
+          <button type="button" className="marry-choice-yes" onClick={handleYesClick}>Yes</button>
+          <button
+            key={`no-${noChaosTick}`}
+            type="button"
+            className="marry-choice-no is-chaos"
+            onClick={handleNoClick}
+          >
+            No
+          </button>
+        </div>
+        {responseLabel ? <p className="marry-response">{responseLabel}</p> : null}
+
         <div className="marry-audio-row">
           <button type="button" onClick={toggleMusic}>
             {musicPlaying ? "Pause Wedding Song" : "Play Wedding Song"}
           </button>
           {autoplayBlocked ? <p>Tap Play once if your browser blocked autoplay.</p> : null}
+          {songError ? <p>{songError}</p> : null}
         </div>
       </section>
     </main>
