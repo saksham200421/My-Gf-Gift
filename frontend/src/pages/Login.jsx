@@ -1,11 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { buildValentineUrl, loginUser, registerUser } from "../utils/api";
+import { buildValentineUrl, loginUser } from "../utils/api";
 
 const initialForm = {
-  name: "",
   username: "",
-  email: "",
   password: "",
 };
 
@@ -41,7 +39,6 @@ const loginGradientOptions = {
 };
 
 function Login({ onAuthenticated, isAuthenticated }) {
-  const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,11 +49,7 @@ function Login({ onAuthenticated, isAuthenticated }) {
   const [gradientStart, gradientMiddle, gradientEnd] =
     loginGradientOptions[gradientOption][gradientShade - 1];
 
-  const heading = useMemo(
-    () =>
-      mode === "login" ? "Welcome back, my love 💖" : "Create our love-space ✨",
-    [mode]
-  );
+  const heading = "Welcome back, my love 💖";
 
   const triggerMegaHeart = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -83,10 +76,7 @@ function Login({ onAuthenticated, isAuthenticated }) {
     setLoading(true);
 
     try {
-      const payload =
-        mode === "login"
-          ? await loginUser({ username: form.username, password: form.password })
-          : await registerUser(form);
+      const payload = await loginUser({ username: form.username, password: form.password });
 
       onAuthenticated(payload.token, payload.user);
       window.location.assign(buildValentineUrl(payload.token));
@@ -159,44 +149,17 @@ function Login({ onAuthenticated, isAuthenticated }) {
         </p>
 
         <form className="login-form" onSubmit={handleSubmit}>
-          {mode === "register" && (
-            <label>
-              Name
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Your sweet name"
-                required
-              />
-            </label>
-          )}
-
-          {mode === "login" ? (
-            <label>
-              Username
-              <input
-                name="username"
-                type="text"
-                value={form.username}
-                onChange={handleChange}
-                placeholder="SAM Sam"
-                required
-              />
-            </label>
-          ) : (
-            <label>
-              Email
-              <input
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                required
-              />
-            </label>
-          )}
+          <label>
+            Username
+            <input
+              name="username"
+              type="text"
+              value={form.username}
+              onChange={handleChange}
+              placeholder="SAM Sam"
+              required
+            />
+          </label>
 
           <label>
             Password
@@ -221,28 +184,9 @@ function Login({ onAuthenticated, isAuthenticated }) {
             onFocus={triggerMegaHeart}
             onClick={triggerMegaHeart}
           >
-            {loading
-              ? "Please wait..."
-              : mode === "login"
-              ? "Enter our world"
-              : "Create account"}
+            {loading ? "Please wait..." : "Enter our world"}
           </button>
         </form>
-
-        <button
-          type="button"
-          className="login-switch"
-          onClick={() => {
-            setMode((prev) => (prev === "login" ? "register" : "login"));
-            setError("");
-          }}
-          onMouseEnter={triggerMegaHeart}
-          onFocus={triggerMegaHeart}
-        >
-          {mode === "login"
-            ? "Need an account? Create one"
-            : "Already registered? Login now"}
-        </button>
       </section>
     </main>
   );

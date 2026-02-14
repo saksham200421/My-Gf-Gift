@@ -40,13 +40,6 @@ export function buildValentineUrl(token) {
   return `${API_URL}/valentine?token=${encodeURIComponent(token)}`;
 }
 
-export async function registerUser({ name, email, password }) {
-  return apiRequest("/api/auth/register", {
-    method: "POST",
-    body: { name, email, password },
-  });
-}
-
 export async function loginUser({ username, password }) {
   return apiRequest("/api/auth/login", {
     method: "POST",
