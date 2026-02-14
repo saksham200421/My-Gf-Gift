@@ -11,7 +11,7 @@ const videoModules = import.meta.glob("../assets/gallery-media/*.{mp4,webm,ogg,m
   import: "default",
 });
 
-const GRID_SLOTS = 6;
+const GRID_SLOTS = 12;
 
 const shuffleList = (list) => {
   const clone = [...list];
@@ -65,9 +65,19 @@ function Gallery() {
       buckets[itemIndex % GRID_SLOTS].push(item);
     });
 
-    return buckets.map((bucket, bucketIndex) =>
-      bucket.length ? bucket : [mediaItems[bucketIndex % mediaItems.length]]
-    );
+    return buckets.map((bucket, bucketIndex) => {
+      const guaranteedFallback = {
+        id: `panel-fallback-${bucketIndex}`,
+        type: "image",
+        src: fallbackImage,
+      };
+
+      if (!bucket.length) {
+        return [guaranteedFallback, mediaItems[bucketIndex % mediaItems.length]];
+      }
+
+      return [guaranteedFallback, ...bucket];
+    });
   }, [mediaItems]);
 
   useEffect(() => {
@@ -91,17 +101,25 @@ function Gallery() {
 
   useEffect(() => {
     const nextInitialIndexes = slidesByPanel.map((slides) => {
-      const imageIndex = slides.findIndex((item) => item.type === "image");
-      return imageIndex >= 0 ? imageIndex : 0;
+      if (slides.length > 1) {
+        return 1;
+      }
+      return 0;
     });
 
     setActiveIndexes(nextInitialIndexes);
   }, [slidesByPanel]);
 
   useEffect(() => {
-    const timers = slidesByPanel.map((bucket, bucketIndex) => {
-      const intervalMs = 4000;
-      return window.setInterval(() => {
+    const intervalTimers = [];
+    const initialTimers = [];
+
+    slidesByPanel.forEach((bucket, bucketIndex) => {
+      const baseIntervalMs = 2000;
+      const staggerMs = (bucketIndex % 4) * 280;
+      const intervalMs = baseIntervalMs + staggerMs;
+
+      const rotatePanel = () => {
         setActiveIndexes((prev) => {
           const next = [...prev];
           const currentIndex = next[bucketIndex] ?? 0;
@@ -131,11 +149,19 @@ function Gallery() {
           next[bucketIndex] = randomIndex;
           return next;
         });
-      }, intervalMs);
+      };
+
+      const initialDelayMs = 500 + bucketIndex * 120;
+      const kickoff = window.setTimeout(rotatePanel, initialDelayMs);
+      initialTimers.push(kickoff);
+
+      const interval = window.setInterval(rotatePanel, intervalMs);
+      intervalTimers.push(interval);
     });
 
     return () => {
-      timers.forEach((timer) => window.clearInterval(timer));
+      intervalTimers.forEach((timer) => window.clearInterval(timer));
+      initialTimers.forEach((timer) => window.clearTimeout(timer));
     };
   }, [readyMap, slidesByPanel]);
 
