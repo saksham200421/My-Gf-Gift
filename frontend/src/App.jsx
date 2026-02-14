@@ -2,6 +2,7 @@ import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import { useMemo, useState } from "react";
 import CoupleMain from "./pages/CoupleMain";
+import Gallery from "./pages/Gallery";
 import Hub from "./pages/Hub";
 import Letters from "./pages/Letters";
 import Login from "./pages/Login";
@@ -59,6 +60,7 @@ function App() {
           <Route path="/hub" element={<Hub />} />
           <Route path="/letters" element={<Letters authToken={authToken} />} />
           <Route path="/marry-me" element={<MarryMe />} />
+          <Route path="/gallery" element={<Gallery />} />
         </Route>
       </Routes>
     </div>

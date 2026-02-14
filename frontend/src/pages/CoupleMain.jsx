@@ -845,6 +845,9 @@ function CoupleMain({ authToken, authUser, onLogout }) {
           <p className="saving-text">
             Last save: {lastSavedAt ? lastSavedAt.toLocaleTimeString() : "No local save timestamp"}
           </p>
+          <button type="button" onClick={() => navigate("/gallery")}>
+            Open Media Gallery
+          </button>
           <button type="button" onClick={() => navigate("/marry-me")}>
             Wedding Certificate
           </button>
