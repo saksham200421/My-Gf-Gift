@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import fallbackImage from "../assets/Omegle_(2).png";
 
 const imageModules = import.meta.glob("../assets/gallery-media/*.{png,jpg,jpeg,webp,avif,gif}", {
@@ -26,6 +26,7 @@ function Gallery() {
   const [activeIndexes, setActiveIndexes] = useState(() =>
     Array.from({ length: GRID_SLOTS }, () => 0)
   );
+  const videoReadyRef = useRef({});
 
   const mediaItems = useMemo(() => {
     const images = Object.entries(imageModules).map(([path, src]) => ({
@@ -69,12 +70,42 @@ function Gallery() {
   }, [mediaItems]);
 
   useEffect(() => {
+    const nextInitialIndexes = slidesByPanel.map((slides) => {
+      const imageIndex = slides.findIndex((item) => item.type === "image");
+      return imageIndex >= 0 ? imageIndex : 0;
+    });
+
+    setActiveIndexes(nextInitialIndexes);
+  }, [slidesByPanel]);
+
+  useEffect(() => {
     const timers = slidesByPanel.map((bucket, bucketIndex) => {
       const intervalMs = 2600 + Math.floor(Math.random() * 2200);
       return window.setInterval(() => {
         setActiveIndexes((prev) => {
           const next = [...prev];
-          next[bucketIndex] = (next[bucketIndex] + 1) % bucket.length;
+          const currentIndex = next[bucketIndex] ?? 0;
+          const readyIndexes = bucket
+            .map((item, itemIndex) => {
+              if (item.type === "image") {
+                return itemIndex;
+              }
+              return videoReadyRef.current[`${bucketIndex}-${itemIndex}`] ? itemIndex : -1;
+            })
+            .filter((itemIndex) => itemIndex >= 0);
+
+          if (!readyIndexes.length) {
+            return next;
+          }
+
+          if (readyIndexes.length === 1) {
+            next[bucketIndex] = readyIndexes[0];
+            return next;
+          }
+
+          const candidates = readyIndexes.filter((itemIndex) => itemIndex !== currentIndex);
+          const randomIndex = candidates[Math.floor(Math.random() * candidates.length)];
+          next[bucketIndex] = randomIndex;
           return next;
         });
       }, intervalMs);
@@ -102,7 +133,11 @@ function Gallery() {
                     loop
                     playsInline
                     autoPlay
-                    preload="metadata"
+                    preload="auto"
+                    poster={fallbackImage}
+                    onLoadedData={() => {
+                      videoReadyRef.current[`${panelIndex}-${itemIndex}`] = true;
+                    }}
                   />
                 );
               }
@@ -117,11 +152,6 @@ function Gallery() {
             })}
           </div>
         ))}
-      </section>
-
-      <section className="gallery-overlay-content">
-        <h1>Our Random Memory Gallery</h1>
-        <p>Add any number of photos and videos to make this wall alive.</p>
       </section>
     </main>
   );
