@@ -18,6 +18,26 @@ const todoSchema = new mongoose.Schema(
   }
 );
 
+const specialOccasionSchema = new mongoose.Schema(
+  {
+    dateKey: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 20,
+    },
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 220,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const coupleDashboardSchema = new mongoose.Schema(
   {
     userId: {
@@ -55,6 +75,10 @@ const coupleDashboardSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    specialOccasions: {
+      type: [specialOccasionSchema],
+      default: [],
+    },
     todos: {
       type: [todoSchema],
       default: [],
@@ -88,6 +112,18 @@ const coupleDashboardSchema = new mongoose.Schema(
       default: "",
       trim: true,
       maxlength: 600,
+    },
+    dashboardTheme: {
+      type: String,
+      default: "soft-blush",
+      trim: true,
+      maxlength: 80,
+    },
+    dashboardBackgroundTheme: {
+      type: String,
+      default: "rose-glow",
+      trim: true,
+      maxlength: 80,
     },
   },
   {

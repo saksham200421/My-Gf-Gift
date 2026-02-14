@@ -198,6 +198,38 @@
   gap: 6px;
 }
 
+.calendar-occasion-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+}
+
+.calendar-occasion-row > * {
+  min-width: 0;
+}
+
+.calendar-occasion-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.calendar-occasion-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-occasion-meta {
+  font-size: 12px;
+  color: var(--ink-600);
+}
+
 .calendar-label {
   text-align: center;
   font-size: 12px;
@@ -212,6 +244,7 @@
   background: #fff;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
 }
 
 .calendar-cell:hover:not(.empty) {
@@ -230,6 +263,42 @@
   color: #fff;
   border-color: transparent;
   animation: popIn 0.2s ease;
+}
+
+.calendar-cell.has-occasion::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d11f45;
+  right: 6px;
+  top: 6px;
+}
+
+.love-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.love-snapshot-grid > div {
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  display: grid;
+  gap: 2px;
+}
+
+.love-snapshot-grid strong {
+  font-size: 18px;
+  color: var(--ink-900);
+}
+
+.love-snapshot-grid span {
+  font-size: 12px;
+  color: var(--ink-600);
 }
 
 .todo-input-row {

@@ -2,12 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   addDashboardTodo,
+  deleteDashboardOccasion,
   deleteDashboardTodo,
   fetchDashboard,
   resolveYouTubeSong,
   searchSongs,
   searchPlace,
+  sendDashboardPing,
   toggleDashboardDate,
+  upsertDashboardOccasion,
   updateDashboardFields,
   updateDashboardTodo,
 } from "../utils/api";
@@ -26,11 +29,14 @@ const emptyDashboard = {
   moodToday: "",
   songPick: "",
   highlightedDates: [],
+  specialOccasions: [],
   thoughtToday: "",
   madReason: "",
   gratitudeNote: "",
   datePlan: "",
   smallWin: "",
+  dashboardTheme: "soft-blush",
+  dashboardBackgroundTheme: "rose-glow",
   wannaGoTo: "",
   todos: [],
 };
@@ -46,6 +52,15 @@ const gameFallbackPrompts = [
   "Slow dance for one full song with no phone.",
   "Write one teasing love note and read it dramatically.",
   "Take turns describing your ideal cuddle plan.",
+];
+
+const sparkIdeas = [
+  "2-minute eye contact + 1 honest compliment each.",
+  "Quick balcony/walk date with one photo challenge.",
+  "Voice-note only conversation for next 10 mins.",
+  "Make tea/coffee for each other and swap playlists.",
+  "Recreate your first message in person dramatically.",
+  "Three gratitude lines before sleeping tonight.",
 ];
 
 const dashboardThemeOptions = [
@@ -92,6 +107,11 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [newTodo, setNewTodo] = useState("");
+  const [occasionDate, setOccasionDate] = useState("");
+  const [occasionText, setOccasionText] = useState("");
+  const [occasionStatus, setOccasionStatus] = useState("");
+  const [pingStatus, setPingStatus] = useState("");
+  const [sparkIdea, setSparkIdea] = useState(sparkIdeas[0]);
   const [todoFilter, setTodoFilter] = useState("all");
   const [isSaving, setIsSaving] = useState(false);
   const [gamePrompt, setGamePrompt] = useState("Loading a couple mini-game...");
@@ -139,6 +159,8 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         const nextDashboard = payload.dashboard || emptyDashboard;
         setDashboard(nextDashboard);
         setYoutubeInput(nextDashboard.songPick || "");
+        setDashboardTheme(nextDashboard.dashboardTheme || "soft-blush");
+        setDashboardBackgroundTheme(nextDashboard.dashboardBackgroundTheme || "rose-glow");
       })
       .catch(() => setDashboard(emptyDashboard));
   }, [authToken]);
@@ -203,11 +225,22 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         day,
         key,
         highlighted: dashboard.highlightedDates.includes(key),
+        hasOccasion: dashboard.specialOccasions.some((occasion) => occasion.dateKey === key),
       });
     }
 
     return cells;
-  }, [monthDate, dashboard.highlightedDates]);
+  }, [monthDate, dashboard.highlightedDates, dashboard.specialOccasions]);
+
+  const monthOccasions = useMemo(() => {
+    const year = monthDate.getFullYear();
+    const month = String(monthDate.getMonth() + 1).padStart(2, "0");
+    const prefix = `${year}-${month}-`;
+
+    return (dashboard.specialOccasions || [])
+      .filter((item) => item.dateKey.startsWith(prefix))
+      .sort((first, second) => first.dateKey.localeCompare(second.dateKey));
+  }, [dashboard.specialOccasions, monthDate]);
 
   const patchDashboard = async (fields) => {
     setIsSaving(true);
@@ -484,6 +517,48 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     }
   };
 
+  const handleSaveOccasion = async () => {
+    const dateKey = occasionDate.trim();
+    const text = occasionText.trim();
+
+    if (!dateKey || !text) {
+      setOccasionStatus("Pick a day and add occasion text.");
+      return;
+    }
+
+    try {
+      const payload = await upsertDashboardOccasion(authToken, dateKey, text);
+      setDashboard(payload.dashboard || emptyDashboard);
+      setOccasionStatus("Occasion saved.");
+      setLastSavedAt(new Date());
+    } catch (error) {
+      setOccasionStatus(error.message || "Could not save occasion.");
+    }
+  };
+
+  const handleDeleteOccasion = async (dateKey) => {
+    try {
+      const payload = await deleteDashboardOccasion(authToken, dateKey);
+      setDashboard(payload.dashboard || emptyDashboard);
+      if (occasionDate === dateKey) {
+        setOccasionText("");
+      }
+      setOccasionStatus("Occasion removed.");
+      setLastSavedAt(new Date());
+    } catch (error) {
+      setOccasionStatus(error.message || "Could not delete occasion.");
+    }
+  };
+
+  const handlePing = async () => {
+    try {
+      const payload = await sendDashboardPing(authToken);
+      setPingStatus(payload.message || "Ping sent.");
+    } catch (error) {
+      setPingStatus(error.message || "Could not send ping.");
+    }
+  };
+
   return (
     <main
       className={`couple-page couple-theme-${dashboardTheme} couple-bg-${dashboardBackgroundTheme}`}
@@ -686,6 +761,23 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             <button type="button" onClick={highlightToday}>Toggle today</button>
             <span>Highlighted: {dashboard.highlightedDates.length}</span>
           </div>
+          <div className="calendar-occasion-row">
+            <input
+              type="date"
+              value={occasionDate}
+              onChange={(event) => setOccasionDate(event.target.value)}
+            />
+            <input
+              type="text"
+              value={occasionText}
+              onChange={(event) => setOccasionText(event.target.value)}
+              placeholder="Add special occasion"
+            />
+            <button type="button" onClick={handleSaveOccasion}>
+              Save
+            </button>
+          </div>
+          {occasionStatus ? <p>{occasionStatus}</p> : null}
           <div className="calendar-grid">
             {["S", "M", "T", "W", "T", "F", "S"].map((label) => (
               <span key={label} className="calendar-label">
@@ -699,14 +791,67 @@ function CoupleMain({ authToken, authUser, onLogout }) {
                 <button
                   type="button"
                   key={cell.key}
-                  className={`calendar-cell ${cell.highlighted ? "highlighted" : ""}`}
-                  onClick={() => handleToggleDate(cell.key)}
+                  className={`calendar-cell ${cell.highlighted ? "highlighted" : ""}${cell.hasOccasion ? " has-occasion" : ""}`}
+                  onClick={() => {
+                    handleToggleDate(cell.key);
+                    setOccasionDate(cell.key);
+                    const match = dashboard.specialOccasions.find(
+                      (occasion) => occasion.dateKey === cell.key
+                    );
+                    setOccasionText(match?.text || "");
+                  }}
                 >
                   {cell.day}
                 </button>
               )
             )}
           </div>
+          {monthOccasions.length ? (
+            <div className="calendar-occasion-list">
+              {monthOccasions.map((occasion) => (
+                <div key={occasion.dateKey} className="calendar-occasion-item">
+                  <span className="calendar-occasion-meta">{occasion.dateKey}</span>
+                  <span>{occasion.text}</span>
+                  <button type="button" onClick={() => handleDeleteOccasion(occasion.dateKey)}>
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="couple-card">
+          <h2>Love Snapshot</h2>
+          <div className="love-snapshot-grid">
+            <div>
+              <strong>{dashboard.highlightedDates.length}</strong>
+              <span>Highlighted Days</span>
+            </div>
+            <div>
+              <strong>{dashboard.specialOccasions.length}</strong>
+              <span>Special Occasions</span>
+            </div>
+            <div>
+              <strong>{dashboard.todos.filter((todo) => todo.done).length}</strong>
+              <span>Tasks Completed</span>
+            </div>
+            <div>
+              <strong>{Math.min(100, dashboard.gratitudeNote.trim().length + dashboard.thoughtToday.trim().length)}</strong>
+              <span>Connection Score</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="couple-card">
+          <h2>Spark Idea Jar</h2>
+          <p>{sparkIdea}</p>
+          <button
+            type="button"
+            onClick={() => setSparkIdea(sparkIdeas[Math.floor(Math.random() * sparkIdeas.length)])}
+          >
+            New Spark
+          </button>
         </div>
 
         <div className="couple-card">
@@ -919,36 +1064,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
 
       <section className="couple-col couple-col-right">
         <div className="couple-card">
-          <h3>Style Mood</h3>
-          <p>Pick a soft dashboard vibe.</p>
-          <div className="dash-style-grid">
-            {dashboardThemeOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`dash-style-btn${dashboardTheme === option.id ? " is-active" : ""}`}
-                onClick={() => setDashboardTheme(option.id)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <p>Mix with main background.</p>
-          <div className="dash-style-grid">
-            {dashboardBackgroundOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`dash-style-btn${dashboardBackgroundTheme === option.id ? " is-active" : ""}`}
-                onClick={() => setDashboardBackgroundTheme(option.id)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="couple-card">
           <h3>Mini Gallery</h3>
           {activeDashboardMedia ? (
             <div className="dash-mini-gallery-single">
@@ -970,6 +1085,8 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         <div className="couple-card">
           <h3>Explore App</h3>
           <p>Jump to every section quickly.</p>
+          <button type="button" onClick={handlePing}>Ping</button>
+          {pingStatus ? <p>{pingStatus}</p> : null}
           <div className="dash-links-grid">
             <button type="button" onClick={() => navigate("/")}>Dashboard</button>
             <button type="button" onClick={() => navigate("/hub")}>Hub</button>
@@ -987,6 +1104,44 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             New challenge
           </button>
           <LoveRunnerGame />
+        </div>
+
+        <div className="couple-card">
+          <h3>Style Mood</h3>
+          <p>Pick a soft dashboard vibe.</p>
+          <div className="dash-style-grid">
+            {dashboardThemeOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`dash-style-btn${dashboardTheme === option.id ? " is-active" : ""}`}
+                onClick={() => {
+                  setDashboardTheme(option.id);
+                  setDashboard((prev) => ({ ...prev, dashboardTheme: option.id }));
+                  patchDashboard({ dashboardTheme: option.id });
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p>Mix with main background.</p>
+          <div className="dash-style-grid">
+            {dashboardBackgroundOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`dash-style-btn${dashboardBackgroundTheme === option.id ? " is-active" : ""}`}
+                onClick={() => {
+                  setDashboardBackgroundTheme(option.id);
+                  setDashboard((prev) => ({ ...prev, dashboardBackgroundTheme: option.id }));
+                  patchDashboard({ dashboardBackgroundTheme: option.id });
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
     </main>

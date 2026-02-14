@@ -1,4 +1,29 @@
 const CoupleDashboard = require("../models/CoupleDashboard");
+const User = require("../models/User");
+const { sendPingEmail } = require("../utils/email");
+
+const allowedDashboardThemes = new Set([
+  "soft-blush",
+  "sweet-lilac",
+  "dreamy-sky",
+  "midnight-rose",
+  "plum-night",
+  "berry-mist",
+  "moonlit-ocean",
+  "dusky-lavender",
+  "velvet-indigo",
+  "cocoa-petal",
+  "noir-romance",
+]);
+
+const allowedDashboardBackgroundThemes = new Set([
+  "rose-glow",
+  "lavender-night",
+  "moon-blue",
+  "plum-haze",
+  "cocoa-dusk",
+  "starlit-indigo",
+]);
 
 async function ensureDashboard(userId) {
   let dashboard = await CoupleDashboard.findOne({ userId });
@@ -18,11 +43,14 @@ function mapDashboard(dashboard) {
     songPick: dashboard.songPick,
     wannaGoTo: dashboard.wannaGoTo,
     highlightedDates: dashboard.highlightedDates,
+    specialOccasions: Array.isArray(dashboard.specialOccasions) ? dashboard.specialOccasions : [],
     thoughtToday: dashboard.thoughtToday,
     madReason: dashboard.madReason,
     gratitudeNote: dashboard.gratitudeNote,
     datePlan: dashboard.datePlan,
     smallWin: dashboard.smallWin,
+    dashboardTheme: dashboard.dashboardTheme,
+    dashboardBackgroundTheme: dashboard.dashboardBackgroundTheme,
     todos: dashboard.todos
       .slice()
       .sort((first, second) => second.createdAt - first.createdAt)
@@ -53,11 +81,29 @@ async function updateDashboard(req, res) {
     "gratitudeNote",
     "datePlan",
     "smallWin",
+    "dashboardTheme",
+    "dashboardBackgroundTheme",
   ];
 
   for (const fieldName of allowedFields) {
     if (Object.prototype.hasOwnProperty.call(req.body || {}, fieldName)) {
-      dashboard[fieldName] = String(req.body[fieldName] || "").trim();
+      const nextValue = String(req.body[fieldName] || "").trim();
+
+      if (fieldName === "dashboardTheme") {
+        if (allowedDashboardThemes.has(nextValue)) {
+          dashboard.dashboardTheme = nextValue;
+        }
+        continue;
+      }
+
+      if (fieldName === "dashboardBackgroundTheme") {
+        if (allowedDashboardBackgroundThemes.has(nextValue)) {
+          dashboard.dashboardBackgroundTheme = nextValue;
+        }
+        continue;
+      }
+
+      dashboard[fieldName] = nextValue;
     }
   }
 
@@ -148,6 +194,83 @@ async function deleteTodo(req, res) {
   return res.json({ dashboard: mapDashboard(dashboard) });
 }
 
+async function upsertSpecialOccasion(req, res) {
+  const { dateKey, text } = req.body || {};
+
+  if (!dateKey || typeof dateKey !== "string") {
+    return res.status(400).json({ message: "dateKey is required" });
+  }
+
+  const normalizedDateKey = String(dateKey).trim();
+  const normalizedText = String(text || "").trim();
+
+  if (!normalizedText) {
+    return res.status(400).json({ message: "Occasion text is required" });
+  }
+
+  const dashboard = await ensureDashboard(req.auth.userId);
+  const existingIndex = dashboard.specialOccasions.findIndex(
+    (item) => item.dateKey === normalizedDateKey
+  );
+
+  if (existingIndex >= 0) {
+    dashboard.specialOccasions[existingIndex].text = normalizedText;
+  } else {
+    dashboard.specialOccasions.push({
+      dateKey: normalizedDateKey,
+      text: normalizedText,
+    });
+  }
+
+  await dashboard.save();
+  return res.json({ dashboard: mapDashboard(dashboard) });
+}
+
+async function deleteSpecialOccasion(req, res) {
+  const { dateKey } = req.params;
+  const normalizedDateKey = String(dateKey || "").trim();
+
+  if (!normalizedDateKey) {
+    return res.status(400).json({ message: "dateKey is required" });
+  }
+
+  const dashboard = await ensureDashboard(req.auth.userId);
+  const previousCount = dashboard.specialOccasions.length;
+  dashboard.specialOccasions = dashboard.specialOccasions.filter(
+    (item) => item.dateKey !== normalizedDateKey
+  );
+
+  if (dashboard.specialOccasions.length === previousCount) {
+    return res.status(404).json({ message: "Occasion not found" });
+  }
+
+  await dashboard.save();
+  return res.json({ dashboard: mapDashboard(dashboard) });
+}
+
+async function sendPing(req, res) {
+  const fromUser = await User.findById(req.auth.userId).select("name email");
+  if (!fromUser) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const recipient = process.env.PING_NOTIFY_EMAIL || fromUser.email;
+
+  setImmediate(async () => {
+    try {
+      await sendPingEmail({
+        to: recipient,
+        fromUserName: fromUser.name,
+        fromUserEmail: fromUser.email,
+      });
+    } catch (error) {
+      console.error("Ping email failed:", error.message);
+    }
+  });
+
+  return res.status(202).json({ message: `${fromUser.name} pinged you` });
+}
+
 module.exports = {
   getDashboard,
   updateDashboard,
@@ -155,4 +278,7 @@ module.exports = {
   addTodo,
   updateTodo,
   deleteTodo,
+  upsertSpecialOccasion,
+  deleteSpecialOccasion,
+  sendPing,
 };

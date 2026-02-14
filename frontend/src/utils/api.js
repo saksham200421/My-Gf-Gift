@@ -99,6 +99,28 @@ export async function toggleDashboardDate(token, dateKey) {
   });
 }
 
+export async function upsertDashboardOccasion(token, dateKey, text) {
+  return apiRequest("/api/dashboard/special-occasion", {
+    method: "POST",
+    token,
+    body: { dateKey, text },
+  });
+}
+
+export async function deleteDashboardOccasion(token, dateKey) {
+  return apiRequest(`/api/dashboard/special-occasion/${encodeURIComponent(dateKey)}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function sendDashboardPing(token) {
+  return apiRequest("/api/dashboard/ping", {
+    method: "POST",
+    token,
+  });
+}
+
 export async function addDashboardTodo(token, text) {
   return apiRequest("/api/dashboard/todos", {
     method: "POST",
