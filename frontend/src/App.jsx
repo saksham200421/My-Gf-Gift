@@ -7,7 +7,6 @@ import Hub from "./pages/Hub";
 import Letters from "./pages/Letters";
 import Login from "./pages/Login";
 import MarryMe from "./pages/MarryMe";
-import ValentineGate from "./pages/ValentineGate";
 import ProtectedRoute from "./components/ProtectedRoute";
 import {
   clearAuthSession,
@@ -48,7 +47,6 @@ function App() {
         />
 
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-          <Route path="/valentine" element={<ValentineGate authUser={authUser} />} />
           <Route
             path="/"
             element={
@@ -65,7 +63,7 @@ function App() {
           <Route path="/gallery" element={<Gallery />} />
         </Route>
 
-        <Route path="*" element={<Navigate to={isAuthenticated ? "/valentine" : "/login"} replace />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} />
       </Routes>
     </div>
   );

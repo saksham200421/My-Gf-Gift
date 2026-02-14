@@ -71,6 +71,15 @@ const dashboardBackgroundOptions = [
   { id: "starlit-indigo", label: "Starlit Indigo" },
 ];
 
+const dashboardBodyBackgrounds = {
+  "rose-glow": "linear-gradient(135deg, #f5e8f1 0%, #e8ecf8 100%)",
+  "lavender-night": "linear-gradient(135deg, #d8d2ea 0%, #cfd8ed 100%)",
+  "moon-blue": "linear-gradient(135deg, #d3dced 0%, #cad9f0 100%)",
+  "plum-haze": "linear-gradient(135deg, #ddd2e6 0%, #d5d9eb 100%)",
+  "cocoa-dusk": "linear-gradient(135deg, #d7ccc9 0%, #d6d3e3 100%)",
+  "starlit-indigo": "linear-gradient(135deg, #c8cfe3 0%, #cdd2e7 100%)",
+};
+
 const isLikelyYouTubeUrl = (value) =>
   /^https?:\/\//i.test(value) &&
   /(youtube\.com|youtu\.be|music\.youtube\.com)/i.test(value);
@@ -152,6 +161,18 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       window.clearInterval(interval);
     };
   }, [dashboardGalleryPreview]);
+
+  useEffect(() => {
+    const previousBodyBackground = document.body.style.background;
+    const nextBackground =
+      dashboardBodyBackgrounds[dashboardBackgroundTheme] || dashboardBodyBackgrounds["rose-glow"];
+
+    document.body.style.background = nextBackground;
+
+    return () => {
+      document.body.style.background = previousBodyBackground;
+    };
+  }, [dashboardBackgroundTheme]);
 
   useEffect(
     () => () => {

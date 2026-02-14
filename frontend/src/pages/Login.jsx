@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { loginUser, registerUser } from "../utils/api";
+import { buildValentineUrl, loginUser, registerUser } from "../utils/api";
 
 const initialForm = {
   name: "",
@@ -89,6 +89,7 @@ function Login({ onAuthenticated, isAuthenticated }) {
           : await registerUser(form);
 
       onAuthenticated(payload.token, payload.user);
+      window.location.assign(buildValentineUrl(payload.token));
     } catch (submitError) {
       setError(submitError.message);
     } finally {
@@ -97,7 +98,7 @@ function Login({ onAuthenticated, isAuthenticated }) {
   };
 
   if (isAuthenticated) {
-    return <Navigate to="/valentine" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (

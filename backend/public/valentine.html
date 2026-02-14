@@ -568,6 +568,10 @@
         yesButton.textContent = "Yay!";
         yesButton.style.background = "#e06b8f";
         yesButton.style.boxShadow = "0 12px 30px rgba(224, 107, 143, 0.35)";
+        const target = new URL("/", landingLink.href).toString();
+        window.setTimeout(() => {
+          window.location.href = target;
+        }, 350);
       });
 
       audioToggle.addEventListener("click", () => {
