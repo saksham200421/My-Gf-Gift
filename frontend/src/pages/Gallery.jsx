@@ -115,9 +115,7 @@ function Gallery() {
     const initialTimers = [];
 
     slidesByPanel.forEach((bucket, bucketIndex) => {
-      const baseIntervalMs = 2000;
-      const staggerMs = (bucketIndex % 4) * 280;
-      const intervalMs = baseIntervalMs + staggerMs;
+      const intervalMs = 4000;
 
       const rotatePanel = () => {
         setActiveIndexes((prev) => {
