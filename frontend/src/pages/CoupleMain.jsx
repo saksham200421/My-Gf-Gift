@@ -21,6 +21,14 @@ const dashboardGalleryModules = import.meta.glob(
   }
 );
 
+const dashboardGalleryVideoModules = import.meta.glob(
+  "../assets/gallery-media/*.{mp4,webm,ogg,mov,m4v}",
+  {
+    eager: true,
+    import: "default",
+  }
+);
+
 const emptyDashboard = {
   eatToday: "",
   moodToday: "",
@@ -38,10 +46,14 @@ const emptyDashboard = {
 const foodQuickPicks = ["Pizza", "Pasta", "Biryani", "Sushi", "Burger", "Chaat"];
 const moodQuickPicks = ["Happy", "Calm", "Romantic", "Chaotic", "Tired", "Goofy"];
 const gameFallbackPrompts = [
-  "Share one hidden fear and one comfort wish.",
-  "Take turns: 3 compliments in 30 seconds.",
-  "One person plans a 20-min date now.",
-  "Guess each other’s mood from one emoji only.",
+  "Whisper your favorite memory of us in 20 seconds.",
+  "Eye contact challenge: no blinking for 20 seconds.",
+  "Give 5 flirty compliments, one at a time.",
+  "Plan a surprise mini-date for tonight in 60 seconds.",
+  "Recreate our first chat energy in one line each.",
+  "Slow dance for one full song with no phone.",
+  "Write one teasing love note and read it dramatically.",
+  "Take turns describing your ideal cuddle plan.",
 ];
 
 const isLikelyYouTubeUrl = (value) =>
@@ -84,15 +96,31 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     isPlaying: false,
   });
   const [youtubePlaybackUrl, setYoutubePlaybackUrl] = useState("");
+  const [miniGalleryIndex, setMiniGalleryIndex] = useState(0);
   const audioRef = useRef(null);
 
   const dashboardGalleryPreview = useMemo(() => {
     const images = Object.values(dashboardGalleryModules).filter(Boolean);
-    if (!images.length) {
-      return [];
-    }
-    return images.slice(0, 6);
+    const videos = Object.values(dashboardGalleryVideoModules).filter(Boolean);
+
+    const media = [
+      ...images.map((src, index) => ({
+        id: `dash-image-${index}`,
+        type: "image",
+        src,
+      })),
+      ...videos.map((src, index) => ({
+        id: `dash-video-${index}`,
+        type: "video",
+        src,
+      })),
+    ];
+
+    return media;
   }, []);
+
+  const activeDashboardMedia =
+    dashboardGalleryPreview[miniGalleryIndex % Math.max(dashboardGalleryPreview.length, 1)] || null;
 
   useEffect(() => {
     fetchDashboard(authToken)
@@ -105,18 +133,23 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   }, [authToken]);
 
   useEffect(() => {
-    fetch("https://api.adviceslip.com/advice?ts=" + Date.now())
-      .then((response) => response.json())
-      .then((payload) => {
-        const advice = payload?.slip?.advice;
-        if (advice) {
-          setGamePrompt(`Game: You both must act on this now → ${advice}`);
-        }
-      })
-      .catch(() => {
-        setGamePrompt("Game: Take turns saying one thing you appreciate about each other.");
-      });
+    const pick = gameFallbackPrompts[Math.floor(Math.random() * gameFallbackPrompts.length)];
+    setGamePrompt(`Spicy Challenge: ${pick}`);
   }, []);
+
+  useEffect(() => {
+    if (!dashboardGalleryPreview.length) {
+      return undefined;
+    }
+
+    const interval = window.setInterval(() => {
+      setMiniGalleryIndex((prev) => (prev + 1) % dashboardGalleryPreview.length);
+    }, 2500);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [dashboardGalleryPreview]);
 
   useEffect(
     () => () => {
@@ -221,24 +254,8 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   };
 
   const refreshGamePrompt = () => {
-    setGamePrompt("Fetching a fresh challenge...");
-    fetch("https://api.adviceslip.com/advice?ts=" + Date.now())
-      .then((response) => response.json())
-      .then((payload) => {
-        const advice = payload?.slip?.advice;
-        if (advice) {
-          setGamePrompt(`Game: You both must act on this now → ${advice}`);
-          return;
-        }
-        setGamePrompt(
-          `Game: ${gameFallbackPrompts[Math.floor(Math.random() * gameFallbackPrompts.length)]}`
-        );
-      })
-      .catch(() => {
-        setGamePrompt(
-          `Game: ${gameFallbackPrompts[Math.floor(Math.random() * gameFallbackPrompts.length)]}`
-        );
-      });
+    const pick = gameFallbackPrompts[Math.floor(Math.random() * gameFallbackPrompts.length)];
+    setGamePrompt(`Spicy Challenge: ${pick}`);
   };
 
   const applySongPick = async (song) => {
@@ -878,18 +895,29 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       <section className="couple-col couple-col-right">
         <div className="couple-card">
           <h3>Mini Gallery</h3>
-          {dashboardGalleryPreview.length ? (
-            <div className="dash-mini-gallery-grid">
-              {dashboardGalleryPreview.map((imageSrc, index) => (
-                <div
-                  key={`dash-gallery-${index}`}
-                  className="dash-mini-gallery-item"
-                  style={{ backgroundImage: `url(${imageSrc})` }}
+          {activeDashboardMedia ? (
+            <div className="dash-mini-gallery-single">
+              {activeDashboardMedia.type === "video" ? (
+                <video
+                  key={activeDashboardMedia.id}
+                  className="dash-mini-gallery-media"
+                  src={activeDashboardMedia.src}
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                  preload="auto"
                 />
-              ))}
+              ) : (
+                <div
+                  key={activeDashboardMedia.id}
+                  className="dash-mini-gallery-media"
+                  style={{ backgroundImage: `url(${activeDashboardMedia.src})` }}
+                />
+              )}
             </div>
           ) : (
-            <p>Add images to the gallery to show preview tiles here.</p>
+            <p>Add media to gallery to show slideshow preview here.</p>
           )}
           <button type="button" onClick={() => navigate("/gallery")}>
             Open Full Gallery
