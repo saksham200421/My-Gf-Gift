@@ -129,6 +129,22 @@ export async function addDashboardChatMessage(token, text) {
   });
 }
 
+export async function updateDashboardVirtualPetName(token, name) {
+  return apiRequest("/api/dashboard/virtual-pet", {
+    method: "PATCH",
+    token,
+    body: { name },
+  });
+}
+
+export async function performDashboardVirtualPetAction(token, action) {
+  return apiRequest("/api/dashboard/virtual-pet/action", {
+    method: "POST",
+    token,
+    body: { action },
+  });
+}
+
 export async function addDashboardTodo(token, text) {
   return apiRequest("/api/dashboard/todos", {
     method: "POST",

@@ -546,6 +546,129 @@
   border-color: rgba(126, 88, 150, 0.35);
 }
 
+.pet-card {
+  gap: 12px;
+  --pet-accent-a: rgba(224, 107, 143, 0.9);
+  --pet-accent-b: rgba(138, 166, 255, 0.9);
+  --pet-glow: rgba(224, 107, 143, 0.2);
+}
+
+.pet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pet-face {
+  font-size: 30px;
+  line-height: 1;
+  transform-origin: center bottom;
+  animation: petIdleBounce 2.7s ease-in-out infinite;
+}
+
+.pet-last-action {
+  font-size: 12px;
+  color: var(--ink-600);
+}
+
+.pet-metrics {
+  display: grid;
+  gap: 8px;
+}
+
+.pet-metric {
+  display: grid;
+  gap: 6px;
+}
+
+.pet-metric span {
+  font-size: 12px;
+  color: var(--ink-700);
+}
+
+.pet-meter {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(31, 42, 72, 0.12);
+  overflow: hidden;
+}
+
+.pet-meter i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--pet-accent-a), var(--pet-accent-b));
+}
+
+.pet-meter-xp i {
+  background: linear-gradient(120deg, var(--pet-accent-b), var(--pet-accent-a));
+}
+
+.pet-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pet-card.pet-mood-excited {
+  --pet-accent-a: rgba(224, 107, 143, 0.95);
+  --pet-accent-b: rgba(138, 166, 255, 0.95);
+  --pet-glow: rgba(224, 107, 143, 0.32);
+  box-shadow: 0 12px 24px var(--pet-glow);
+}
+
+.pet-card.pet-mood-happy {
+  --pet-accent-a: rgba(224, 107, 143, 0.9);
+  --pet-accent-b: rgba(138, 166, 255, 0.85);
+  --pet-glow: rgba(138, 166, 255, 0.22);
+  box-shadow: 0 10px 20px var(--pet-glow);
+}
+
+.pet-card.pet-mood-calm {
+  --pet-accent-a: rgba(138, 166, 255, 0.82);
+  --pet-accent-b: rgba(224, 107, 143, 0.78);
+  --pet-glow: rgba(138, 166, 255, 0.2);
+}
+
+.pet-card.pet-mood-sleepy {
+  --pet-accent-a: rgba(138, 166, 255, 0.74);
+  --pet-accent-b: rgba(106, 115, 141, 0.74);
+  --pet-glow: rgba(106, 115, 141, 0.2);
+}
+
+.pet-card.pet-mood-hungry {
+  --pet-accent-a: rgba(224, 107, 143, 0.84);
+  --pet-accent-b: rgba(106, 115, 141, 0.72);
+  --pet-glow: rgba(224, 107, 143, 0.2);
+}
+
+.pet-card.pet-mood-sad {
+  --pet-accent-a: rgba(106, 115, 141, 0.78);
+  --pet-accent-b: rgba(138, 166, 255, 0.68);
+  --pet-glow: rgba(106, 115, 141, 0.2);
+}
+
+.pet-card.pet-mood-excited .pet-face {
+  animation-duration: 1.6s;
+}
+
+.pet-card.pet-mood-sleepy .pet-face,
+.pet-card.pet-mood-sad .pet-face {
+  animation-duration: 3.2s;
+}
+
+@keyframes petIdleBounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.04);
+  }
+}
+
 .now-playing-box {
   display: grid;
   gap: 8px;

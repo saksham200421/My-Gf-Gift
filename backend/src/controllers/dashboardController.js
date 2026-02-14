@@ -25,6 +25,112 @@ const allowedDashboardBackgroundThemes = new Set([
   "starlit-indigo",
 ]);
 
+const allowedPetActions = new Set(["feed", "play", "rest", "cuddle"]);
+
+function clampMetric(value) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function ensureVirtualPet(dashboard) {
+  if (!dashboard.virtualPet) {
+    dashboard.virtualPet = {};
+  }
+
+  const pet = dashboard.virtualPet;
+  pet.name = String(pet.name || "Mochi").trim().slice(0, 40) || "Mochi";
+  pet.species = String(pet.species || "Love Cat").trim().slice(0, 40) || "Love Cat";
+  pet.fullness = clampMetric(Number.isFinite(pet.fullness) ? pet.fullness : 70);
+  pet.energy = clampMetric(Number.isFinite(pet.energy) ? pet.energy : 72);
+  pet.happiness = clampMetric(Number.isFinite(pet.happiness) ? pet.happiness : 78);
+  pet.level = Math.max(1, Math.floor(Number.isFinite(pet.level) ? pet.level : 1));
+  pet.xp = Math.max(0, Math.floor(Number.isFinite(pet.xp) ? pet.xp : 0));
+  pet.lastActionAt = pet.lastActionAt ? new Date(pet.lastActionAt) : new Date();
+
+  return pet;
+}
+
+function computePetMood(pet) {
+  if (pet.fullness <= 20) {
+    return "hungry";
+  }
+  if (pet.energy <= 18) {
+    return "sleepy";
+  }
+  if (pet.happiness <= 28) {
+    return "sad";
+  }
+  if (pet.happiness >= 84 && pet.energy >= 55 && pet.fullness >= 45) {
+    return "excited";
+  }
+  if (pet.energy >= 70 && pet.happiness >= 65) {
+    return "happy";
+  }
+  return "calm";
+}
+
+function applyPassivePetDecay(dashboard) {
+  const pet = ensureVirtualPet(dashboard);
+  const now = new Date();
+  const elapsedMs = Math.max(0, now.getTime() - new Date(pet.lastActionAt).getTime());
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+
+  if (elapsedHours < 0.5) {
+    pet.mood = computePetMood(pet);
+    return false;
+  }
+
+  const nextFullness = pet.fullness - elapsedHours * 1.4;
+  const nextEnergy = pet.energy - elapsedHours * 1.05;
+  const nextHappiness = pet.happiness - elapsedHours * 0.7;
+
+  pet.fullness = clampMetric(nextFullness);
+  pet.energy = clampMetric(nextEnergy);
+  pet.happiness = clampMetric(nextHappiness);
+  pet.mood = computePetMood(pet);
+  pet.lastActionAt = now;
+
+  return true;
+}
+
+function applyPetAction(pet, action) {
+  if (action === "feed") {
+    pet.fullness = clampMetric(pet.fullness + 24);
+    pet.energy = clampMetric(pet.energy + 4);
+    pet.happiness = clampMetric(pet.happiness + 6);
+    pet.xp += 9;
+  }
+
+  if (action === "play") {
+    pet.fullness = clampMetric(pet.fullness - 12);
+    pet.energy = clampMetric(pet.energy - 15);
+    pet.happiness = clampMetric(pet.happiness + 18);
+    pet.xp += 14;
+  }
+
+  if (action === "rest") {
+    pet.fullness = clampMetric(pet.fullness - 5);
+    pet.energy = clampMetric(pet.energy + 24);
+    pet.happiness = clampMetric(pet.happiness + 4);
+    pet.xp += 10;
+  }
+
+  if (action === "cuddle") {
+    pet.fullness = clampMetric(pet.fullness - 4);
+    pet.energy = clampMetric(pet.energy + 6);
+    pet.happiness = clampMetric(pet.happiness + 14);
+    pet.xp += 11;
+  }
+
+  while (pet.xp >= pet.level * 100) {
+    pet.xp -= pet.level * 100;
+    pet.level += 1;
+    pet.happiness = clampMetric(pet.happiness + 8);
+    pet.energy = clampMetric(pet.energy + 5);
+  }
+
+  pet.mood = computePetMood(pet);
+}
+
 async function ensureDashboard(userId) {
   let dashboard = await CoupleDashboard.findOne({ userId });
 
@@ -36,6 +142,8 @@ async function ensureDashboard(userId) {
 }
 
 function mapDashboard(dashboard) {
+  const pet = ensureVirtualPet(dashboard);
+
   return {
     id: dashboard._id.toString(),
     eatToday: dashboard.eatToday,
@@ -60,6 +168,18 @@ function mapDashboard(dashboard) {
     smallWin: dashboard.smallWin,
     dashboardTheme: dashboard.dashboardTheme,
     dashboardBackgroundTheme: dashboard.dashboardBackgroundTheme,
+    virtualPet: {
+      name: pet.name,
+      species: pet.species,
+      mood: pet.mood,
+      fullness: pet.fullness,
+      energy: pet.energy,
+      happiness: pet.happiness,
+      level: pet.level,
+      xp: pet.xp,
+      xpToNext: Math.max(1, pet.level * 100),
+      lastActionAt: pet.lastActionAt,
+    },
     todos: dashboard.todos
       .slice()
       .sort((first, second) => second.createdAt - first.createdAt)
@@ -74,6 +194,10 @@ function mapDashboard(dashboard) {
 
 async function getDashboard(req, res) {
   const dashboard = await ensureDashboard(req.auth.userId);
+  const hasDecayChanges = applyPassivePetDecay(dashboard);
+  if (hasDecayChanges) {
+    await dashboard.save();
+  }
   return res.json({ dashboard: mapDashboard(dashboard) });
 }
 
@@ -298,6 +422,38 @@ async function addChatMessage(req, res) {
   return res.status(201).json({ dashboard: mapDashboard(dashboard) });
 }
 
+async function updateVirtualPetName(req, res) {
+  const rawName = String(req.body?.name || "").trim();
+  if (!rawName) {
+    return res.status(400).json({ message: "Pet name is required" });
+  }
+
+  const dashboard = await ensureDashboard(req.auth.userId);
+  const pet = ensureVirtualPet(dashboard);
+  pet.name = rawName.slice(0, 40);
+  pet.lastActionAt = new Date();
+  pet.mood = computePetMood(pet);
+
+  await dashboard.save();
+  return res.json({ dashboard: mapDashboard(dashboard) });
+}
+
+async function performVirtualPetAction(req, res) {
+  const action = String(req.body?.action || "").trim().toLowerCase();
+  if (!allowedPetActions.has(action)) {
+    return res.status(400).json({ message: "Invalid pet action" });
+  }
+
+  const dashboard = await ensureDashboard(req.auth.userId);
+  applyPassivePetDecay(dashboard);
+  const pet = ensureVirtualPet(dashboard);
+  applyPetAction(pet, action);
+  pet.lastActionAt = new Date();
+
+  await dashboard.save();
+  return res.json({ dashboard: mapDashboard(dashboard) });
+}
+
 module.exports = {
   getDashboard,
   updateDashboard,
@@ -309,4 +465,6 @@ module.exports = {
   deleteSpecialOccasion,
   sendPing,
   addChatMessage,
+  updateVirtualPetName,
+  performVirtualPetAction,
 };

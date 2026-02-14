@@ -6,11 +6,13 @@ import {
   deleteDashboardOccasion,
   deleteDashboardTodo,
   fetchDashboard,
+  performDashboardVirtualPetAction,
   resolveYouTubeSong,
   searchSongs,
   searchPlace,
   sendDashboardPing,
   toggleDashboardDate,
+  updateDashboardVirtualPetName,
   upsertDashboardOccasion,
   updateDashboardFields,
   updateDashboardTodo,
@@ -40,6 +42,17 @@ const emptyDashboard = {
   highlightedDates: [],
   specialOccasions: [],
   messageHistory: [],
+  virtualPet: {
+    name: "Mochi",
+    species: "Love Cat",
+    mood: "happy",
+    fullness: 70,
+    energy: 72,
+    happiness: 78,
+    level: 1,
+    xp: 0,
+    xpToNext: 100,
+  },
   thoughtToday: "",
   madReason: "",
   gratitudeNote: "",
@@ -62,21 +75,6 @@ const gameFallbackPrompts = [
   "Slow dance for one full song with no phone.",
   "Write one teasing love note and read it dramatically.",
   "Take turns describing your ideal cuddle plan.",
-];
-
-const sparkIdeas = [
-  "2-minute eye contact + 1 honest compliment each.",
-  "Quick balcony/walk date with one photo challenge.",
-  "Voice-note only conversation for next 10 mins.",
-  "Make tea/coffee for each other and swap playlists.",
-  "Recreate your first message in person dramatically.",
-  "Three gratitude lines before sleeping tonight.",
-  "Pick one old photo and recreate that moment today.",
-  "2-song dance break in your room with no phones.",
-  "Plan a 15-minute dessert run and rate it together.",
-  "Say one thing you admire and one thing you miss.",
-  "Write tiny notes and exchange them after dinner.",
-  "Take turns picking one surprise task for each other.",
 ];
 
 const thoughtPrompts = [
@@ -106,15 +104,6 @@ const gratitudeTemplates = [
   "Thank you for being my comfort and my chaos partner.",
 ];
 
-const bucketSpinThoughts = [
-  "One selfie + one hug challenge in the next 5 mins.",
-  "Share one hidden dream you haven’t said out loud.",
-  "No-phone cuddles for 15 mins and just talk.",
-  "Give 3 compliments each without repeating words.",
-  "Play one song and slow dance till it ends.",
-  "Plan a tiny surprise for each other before sleep.",
-];
-
 const datePlanSuggestionsByBudget = {
   low: [
     "budget date: roadside chai + long walk + one candid photo.",
@@ -141,6 +130,15 @@ const smallWinTemplates = [
   "{stars}/5 because we stayed connected even when busy.",
   "{stars}/5: imperfect day, perfect team.",
 ];
+
+const petMoodFaces = {
+  excited: "😻",
+  happy: "😺",
+  calm: "🐾",
+  sleepy: "😴",
+  hungry: "🥺",
+  sad: "😿",
+};
 
 const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
 
@@ -192,7 +190,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [occasionText, setOccasionText] = useState("");
   const [occasionStatus, setOccasionStatus] = useState("");
   const [pingStatus, setPingStatus] = useState("");
-  const [sparkIdea, setSparkIdea] = useState(sparkIdeas[0]);
   const [todoFilter, setTodoFilter] = useState("all");
   const [isSaving, setIsSaving] = useState(false);
   const [gamePrompt, setGamePrompt] = useState("Loading a couple mini-game...");
@@ -204,6 +201,9 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [messageDraft, setMessageDraft] = useState("");
   const [chatStatus, setChatStatus] = useState("");
   const [chatSending, setChatSending] = useState(false);
+  const [petNameDraft, setPetNameDraft] = useState("Mochi");
+  const [petStatus, setPetStatus] = useState("");
+  const [petLoading, setPetLoading] = useState(false);
   const [placeQuery, setPlaceQuery] = useState("");
   const [placeData, setPlaceData] = useState(null);
   const [placeLoading, setPlaceLoading] = useState(false);
@@ -249,6 +249,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       .then((payload) => {
         const nextDashboard = payload.dashboard || emptyDashboard;
         setDashboard(nextDashboard);
+        setPetNameDraft(nextDashboard.virtualPet?.name || "Mochi");
         setYoutubeInput(nextDashboard.songPick || "");
         setDashboardTheme(nextDashboard.dashboardTheme || "soft-blush");
         setDashboardBackgroundTheme(nextDashboard.dashboardBackgroundTheme || "rose-glow");
@@ -698,6 +699,57 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     }
   };
 
+  const handlePetAction = async (action) => {
+    setPetLoading(true);
+    setPetStatus("");
+    try {
+      const payload = await performDashboardVirtualPetAction(authToken, action);
+      const nextDashboard = payload.dashboard || emptyDashboard;
+      setDashboard(nextDashboard);
+      setPetNameDraft(nextDashboard.virtualPet?.name || "Mochi");
+      setPetStatus("Your pet loved that ✨");
+      setLastSavedAt(new Date());
+    } catch (error) {
+      setPetStatus(error.message || "Could not update pet right now.");
+    } finally {
+      setPetLoading(false);
+    }
+  };
+
+  const handleSavePetName = async () => {
+    const nextName = petNameDraft.trim();
+    if (!nextName) {
+      setPetStatus("Give your pet a name first.");
+      return;
+    }
+
+    setPetLoading(true);
+    setPetStatus("");
+    try {
+      const payload = await updateDashboardVirtualPetName(authToken, nextName);
+      const nextDashboard = payload.dashboard || emptyDashboard;
+      setDashboard(nextDashboard);
+      setPetNameDraft(nextDashboard.virtualPet?.name || nextName);
+      setPetStatus("Pet name saved 💖");
+      setLastSavedAt(new Date());
+    } catch (error) {
+      setPetStatus(error.message || "Could not save pet name.");
+    } finally {
+      setPetLoading(false);
+    }
+  };
+
+  const virtualPet = dashboard.virtualPet || emptyDashboard.virtualPet;
+  const petFace = petMoodFaces[virtualPet.mood] || "🐾";
+  const petMoodClass = `pet-mood-${String(virtualPet.mood || "calm").toLowerCase()}`;
+  const petXpProgress = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(((virtualPet.xp || 0) / Math.max(1, virtualPet.xpToNext || 100)) * 100)
+    )
+  );
+
   const applyThoughtPrompt = async () => {
     const nextThought = pickRandom(thoughtPrompts);
     setDashboard((prev) => ({ ...prev, thoughtToday: nextThought }));
@@ -728,12 +780,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     const nextSmallWin = template.replace("{stars}", String(winStars));
     setDashboard((prev) => ({ ...prev, smallWin: nextSmallWin }));
     await patchDashboard({ smallWin: nextSmallWin });
-  };
-
-  const applyBucketSpin = async () => {
-    const nextThought = pickRandom(bucketSpinThoughts);
-    setDashboard((prev) => ({ ...prev, thoughtToday: nextThought }));
-    await patchDashboard({ thoughtToday: nextThought });
   };
 
   return (
@@ -1186,32 +1232,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         </div>
 
         <div className="couple-card">
-          <h2>Couple Bucket Spins</h2>
-          <p>Tap spin to get a fresh romantic challenge and save it instantly.</p>
-          <div className="inline-actions">
-            <button type="button" onClick={applyBucketSpin}>
-              Spin Suggestion
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                const nextGratitude = pickRandom(gratitudeTemplates);
-                setDashboard((prev) => ({ ...prev, gratitudeNote: nextGratitude }));
-                await patchDashboard({ gratitudeNote: nextGratitude });
-              }}
-            >
-              Spin Appreciation
-            </button>
-            <button
-              type="button"
-              onClick={applyDatePlanSuggestion}
-            >
-              Spin Date Plan
-            </button>
-          </div>
-        </div>
-
-        <div className="couple-card">
           <h2>Love Snapshot</h2>
           <div className="love-snapshot-grid">
             <div>
@@ -1230,28 +1250,6 @@ function CoupleMain({ authToken, authUser, onLogout }) {
               <strong>{Math.min(100, dashboard.gratitudeNote.trim().length + dashboard.thoughtToday.trim().length)}</strong>
               <span>Connection Score</span>
             </div>
-          </div>
-        </div>
-
-        <div className="couple-card">
-          <h2>Spark Idea Jar</h2>
-          <p>{sparkIdea}</p>
-          <div className="inline-actions">
-            <button
-              type="button"
-              onClick={() => setSparkIdea(pickRandom(sparkIdeas))}
-            >
-              New Spark
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                setDashboard((prev) => ({ ...prev, datePlan: sparkIdea }));
-                await patchDashboard({ datePlan: sparkIdea });
-              }}
-            >
-              Use in Date Plan
-            </button>
           </div>
         </div>
 
@@ -1348,6 +1346,60 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             New challenge
           </button>
           <LoveRunnerGame />
+        </div>
+
+        <div className={`couple-card pet-card ${petMoodClass}`}>
+          <div className="pet-header">
+            <h3>Virtual Pet</h3>
+            <span className="pet-face" aria-hidden="true">{petFace}</span>
+          </div>
+          <p>
+            {virtualPet.name || "Mochi"} · {virtualPet.species || "Love Cat"} · Mood: {virtualPet.mood || "happy"}
+          </p>
+          {virtualPet.lastActionAt ? (
+            <p className="pet-last-action">
+              Last action: {new Date(virtualPet.lastActionAt).toLocaleTimeString()}
+            </p>
+          ) : null}
+
+          <div className="todo-input-row">
+            <input
+              value={petNameDraft}
+              onChange={(event) => setPetNameDraft(event.target.value)}
+              maxLength={40}
+              placeholder="Pet name"
+            />
+            <button type="button" onClick={handleSavePetName} disabled={petLoading}>
+              Save
+            </button>
+          </div>
+
+          <div className="pet-metrics">
+            <div className="pet-metric">
+              <span>Fullness</span>
+              <div className="pet-meter"><i style={{ width: `${virtualPet.fullness || 0}%` }} /></div>
+            </div>
+            <div className="pet-metric">
+              <span>Energy</span>
+              <div className="pet-meter"><i style={{ width: `${virtualPet.energy || 0}%` }} /></div>
+            </div>
+            <div className="pet-metric">
+              <span>Happiness</span>
+              <div className="pet-meter"><i style={{ width: `${virtualPet.happiness || 0}%` }} /></div>
+            </div>
+            <div className="pet-metric">
+              <span>Level {virtualPet.level || 1} · XP {virtualPet.xp || 0}/{virtualPet.xpToNext || 100}</span>
+              <div className="pet-meter pet-meter-xp"><i style={{ width: `${petXpProgress}%` }} /></div>
+            </div>
+          </div>
+
+          <div className="pet-actions">
+            <button type="button" onClick={() => handlePetAction("feed")} disabled={petLoading}>Feed</button>
+            <button type="button" onClick={() => handlePetAction("play")} disabled={petLoading}>Play</button>
+            <button type="button" onClick={() => handlePetAction("rest")} disabled={petLoading}>Rest</button>
+            <button type="button" onClick={() => handlePetAction("cuddle")} disabled={petLoading}>Cuddle</button>
+          </div>
+          {petStatus ? <p>{petStatus}</p> : null}
         </div>
 
         <div className="couple-card">

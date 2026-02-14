@@ -56,6 +56,64 @@ const messageHistoryItemSchema = new mongoose.Schema(
   }
 );
 
+const virtualPetSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      default: "Mochi",
+      trim: true,
+      maxlength: 40,
+    },
+    species: {
+      type: String,
+      default: "Love Cat",
+      trim: true,
+      maxlength: 40,
+    },
+    mood: {
+      type: String,
+      default: "happy",
+      trim: true,
+      maxlength: 24,
+    },
+    fullness: {
+      type: Number,
+      default: 70,
+      min: 0,
+      max: 100,
+    },
+    energy: {
+      type: Number,
+      default: 72,
+      min: 0,
+      max: 100,
+    },
+    happiness: {
+      type: Number,
+      default: 78,
+      min: 0,
+      max: 100,
+    },
+    level: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    xp: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastActionAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const coupleDashboardSchema = new mongoose.Schema(
   {
     userId: {
@@ -100,6 +158,10 @@ const coupleDashboardSchema = new mongoose.Schema(
     messageHistory: {
       type: [messageHistoryItemSchema],
       default: [],
+    },
+    virtualPet: {
+      type: virtualPetSchema,
+      default: () => ({}),
     },
     todos: {
       type: [todoSchema],
