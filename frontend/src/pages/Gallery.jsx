@@ -100,7 +100,7 @@ function Gallery() {
 
   useEffect(() => {
     const timers = slidesByPanel.map((bucket, bucketIndex) => {
-      const intervalMs = 5000;
+      const intervalMs = 4000;
       return window.setInterval(() => {
         setActiveIndexes((prev) => {
           const next = [...prev];
@@ -144,6 +144,10 @@ function Gallery() {
       <section className="gallery-grid" aria-label="Mixed media gallery slideshow">
         {slidesByPanel.map((slides, panelIndex) => (
           <div className="gallery-panel" key={`panel-${panelIndex}`}>
+            <div
+              className="gallery-panel-fallback"
+              style={{ backgroundImage: `url(${fallbackImage})` }}
+            />
             {slides.map((item, itemIndex) => {
               const isActive = activeIndexes[panelIndex] === itemIndex;
               if (item.type === "video") {
