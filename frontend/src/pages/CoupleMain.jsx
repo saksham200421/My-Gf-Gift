@@ -52,6 +52,14 @@ const dashboardThemeOptions = [
   { id: "soft-blush", label: "Soft Blush" },
   { id: "sweet-lilac", label: "Sweet Lilac" },
   { id: "dreamy-sky", label: "Dreamy Sky" },
+  { id: "midnight-rose", label: "Midnight Rose" },
+  { id: "plum-night", label: "Plum Night" },
+  { id: "berry-mist", label: "Berry Mist" },
+  { id: "moonlit-ocean", label: "Moonlit Ocean" },
+  { id: "dusky-lavender", label: "Dusky Lavender" },
+  { id: "velvet-indigo", label: "Velvet Indigo" },
+  { id: "cocoa-petal", label: "Cocoa Petal" },
+  { id: "noir-romance", label: "Noir Romance" },
 ];
 
 const isLikelyYouTubeUrl = (value) =>

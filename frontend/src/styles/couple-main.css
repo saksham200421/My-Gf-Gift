@@ -52,6 +52,7 @@
 .couple-col-left {
   background: linear-gradient(180deg, #f3deea, #e7edf9);
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -93,6 +94,7 @@
   box-shadow: 0 10px 18px rgba(31, 42, 72, 0.08);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   animation: cardRiseIn 0.45s ease both;
+  min-width: 0;
 }
 
 .couple-card:nth-child(2) {
@@ -230,6 +232,10 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 10px;
+}
+
+.todo-input-row > * {
+  min-width: 0;
 }
 
 .todo-list {
@@ -406,7 +412,7 @@
 
 .dash-style-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -419,6 +425,7 @@
   padding: 8px 10px;
   text-align: left;
   cursor: pointer;
+  font-size: 12px;
 }
 
 .dash-style-btn.is-active {
@@ -591,4 +598,100 @@
 
 .couple-page.couple-theme-dreamy-sky .couple-col-right {
   background: linear-gradient(180deg, #dde8f8, #dce8fb);
+}
+
+.couple-page.couple-theme-midnight-rose .couple-col-left {
+  background: linear-gradient(180deg, #5c3d53, #3e3b58);
+}
+
+.couple-page.couple-theme-midnight-rose .couple-col-main {
+  background: linear-gradient(180deg, #6a4760, #464765);
+}
+
+.couple-page.couple-theme-midnight-rose .couple-col-right {
+  background: linear-gradient(180deg, #50384a, #393c54);
+}
+
+.couple-page.couple-theme-plum-night .couple-col-left {
+  background: linear-gradient(180deg, #4b3a5f, #323852);
+}
+
+.couple-page.couple-theme-plum-night .couple-col-main {
+  background: linear-gradient(180deg, #564471, #39415e);
+}
+
+.couple-page.couple-theme-plum-night .couple-col-right {
+  background: linear-gradient(180deg, #433451, #2f3951);
+}
+
+.couple-page.couple-theme-berry-mist .couple-col-left {
+  background: linear-gradient(180deg, #5b3b54, #3b4158);
+}
+
+.couple-page.couple-theme-berry-mist .couple-col-main {
+  background: linear-gradient(180deg, #664462, #454d68);
+}
+
+.couple-page.couple-theme-berry-mist .couple-col-right {
+  background: linear-gradient(180deg, #50374a, #39435a);
+}
+
+.couple-page.couple-theme-moonlit-ocean .couple-col-left {
+  background: linear-gradient(180deg, #344b66, #2f3f58);
+}
+
+.couple-page.couple-theme-moonlit-ocean .couple-col-main {
+  background: linear-gradient(180deg, #3d5674, #364962);
+}
+
+.couple-page.couple-theme-moonlit-ocean .couple-col-right {
+  background: linear-gradient(180deg, #2f455f, #2d3e56);
+}
+
+.couple-page.couple-theme-dusky-lavender .couple-col-left {
+  background: linear-gradient(180deg, #54466f, #3f4563);
+}
+
+.couple-page.couple-theme-dusky-lavender .couple-col-main {
+  background: linear-gradient(180deg, #62527f, #4a5070);
+}
+
+.couple-page.couple-theme-dusky-lavender .couple-col-right {
+  background: linear-gradient(180deg, #4a3f63, #3b435f);
+}
+
+.couple-page.couple-theme-velvet-indigo .couple-col-left {
+  background: linear-gradient(180deg, #3a4365, #2f3758);
+}
+
+.couple-page.couple-theme-velvet-indigo .couple-col-main {
+  background: linear-gradient(180deg, #454f75, #353f63);
+}
+
+.couple-page.couple-theme-velvet-indigo .couple-col-right {
+  background: linear-gradient(180deg, #343d5d, #2b3551);
+}
+
+.couple-page.couple-theme-cocoa-petal .couple-col-left {
+  background: linear-gradient(180deg, #5a4748, #453d4e);
+}
+
+.couple-page.couple-theme-cocoa-petal .couple-col-main {
+  background: linear-gradient(180deg, #665051, #4f4559);
+}
+
+.couple-page.couple-theme-cocoa-petal .couple-col-right {
+  background: linear-gradient(180deg, #503f40, #3d3747);
+}
+
+.couple-page.couple-theme-noir-romance .couple-col-left {
+  background: linear-gradient(180deg, #383743, #2d3140);
+}
+
+.couple-page.couple-theme-noir-romance .couple-col-main {
+  background: linear-gradient(180deg, #433f4f, #353a4b);
+}
+
+.couple-page.couple-theme-noir-romance .couple-col-right {
+  background: linear-gradient(180deg, #323240, #2a2f3d);
 }
