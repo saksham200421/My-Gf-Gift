@@ -62,6 +62,15 @@ const dashboardThemeOptions = [
   { id: "noir-romance", label: "Noir Romance" },
 ];
 
+const dashboardBackgroundOptions = [
+  { id: "rose-glow", label: "Rose Glow" },
+  { id: "lavender-night", label: "Lavender Night" },
+  { id: "moon-blue", label: "Moon Blue" },
+  { id: "plum-haze", label: "Plum Haze" },
+  { id: "cocoa-dusk", label: "Cocoa Dusk" },
+  { id: "starlit-indigo", label: "Starlit Indigo" },
+];
+
 const isLikelyYouTubeUrl = (value) =>
   /^https?:\/\//i.test(value) &&
   /(youtube\.com|youtu\.be|music\.youtube\.com)/i.test(value);
@@ -104,6 +113,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [youtubePlaybackUrl, setYoutubePlaybackUrl] = useState("");
   const [miniGalleryIndex, setMiniGalleryIndex] = useState(0);
   const [dashboardTheme, setDashboardTheme] = useState("soft-blush");
+  const [dashboardBackgroundTheme, setDashboardBackgroundTheme] = useState("rose-glow");
   const audioRef = useRef(null);
 
   const dashboardGalleryPreview = useMemo(() => {
@@ -454,7 +464,9 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   };
 
   return (
-    <main className={`couple-page couple-theme-${dashboardTheme}`}>
+    <main
+      className={`couple-page couple-theme-${dashboardTheme} couple-bg-${dashboardBackgroundTheme}`}
+    >
       <section className="couple-col couple-col-left">
         <div className="couple-card">
           <h3>Wanna eat this ___ today?</h3>
@@ -895,6 +907,19 @@ function CoupleMain({ authToken, authUser, onLogout }) {
                 type="button"
                 className={`dash-style-btn${dashboardTheme === option.id ? " is-active" : ""}`}
                 onClick={() => setDashboardTheme(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p>Mix with main background.</p>
+          <div className="dash-style-grid">
+            {dashboardBackgroundOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`dash-style-btn${dashboardBackgroundTheme === option.id ? " is-active" : ""}`}
+                onClick={() => setDashboardBackgroundTheme(option.id)}
               >
                 {option.label}
               </button>

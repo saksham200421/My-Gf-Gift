@@ -1,4 +1,7 @@
 .couple-page {
+  --couple-bg-page: linear-gradient(135deg, #f6eef6 0%, #ebf0fb 100%);
+  --couple-bg-orb-a: rgba(221, 143, 180, 0.32);
+  --couple-bg-orb-b: rgba(138, 170, 230, 0.28);
   height: calc(100vh - 24px);
   margin: 14px;
   display: grid;
@@ -7,6 +10,7 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  background: var(--couple-bg-page);
 }
 
 .couple-page::before,
@@ -24,7 +28,7 @@
   height: 320px;
   top: -100px;
   left: -60px;
-  background: rgba(221, 143, 180, 0.32);
+  background: var(--couple-bg-orb-a);
   animation: orbitGlowA 10s ease-in-out infinite;
 }
 
@@ -33,7 +37,7 @@
   height: 360px;
   right: -80px;
   bottom: -120px;
-  background: rgba(138, 170, 230, 0.28);
+  background: var(--couple-bg-orb-b);
   animation: orbitGlowB 12s ease-in-out infinite;
 }
 
@@ -694,4 +698,40 @@
 
 .couple-page.couple-theme-noir-romance .couple-col-right {
   background: linear-gradient(180deg, #323240, #2a2f3d);
+}
+
+.couple-page.couple-bg-rose-glow {
+  --couple-bg-page: linear-gradient(135deg, #f5e8f1 0%, #e8ecf8 100%);
+  --couple-bg-orb-a: rgba(209, 117, 165, 0.34);
+  --couple-bg-orb-b: rgba(130, 156, 219, 0.3);
+}
+
+.couple-page.couple-bg-lavender-night {
+  --couple-bg-page: linear-gradient(135deg, #d8d2ea 0%, #cfd8ed 100%);
+  --couple-bg-orb-a: rgba(127, 88, 171, 0.36);
+  --couple-bg-orb-b: rgba(106, 132, 196, 0.33);
+}
+
+.couple-page.couple-bg-moon-blue {
+  --couple-bg-page: linear-gradient(135deg, #d3dced 0%, #cad9f0 100%);
+  --couple-bg-orb-a: rgba(122, 143, 203, 0.35);
+  --couple-bg-orb-b: rgba(103, 122, 181, 0.33);
+}
+
+.couple-page.couple-bg-plum-haze {
+  --couple-bg-page: linear-gradient(135deg, #ddd2e6 0%, #d5d9eb 100%);
+  --couple-bg-orb-a: rgba(140, 99, 162, 0.34);
+  --couple-bg-orb-b: rgba(112, 133, 184, 0.32);
+}
+
+.couple-page.couple-bg-cocoa-dusk {
+  --couple-bg-page: linear-gradient(135deg, #d7ccc9 0%, #d6d3e3 100%);
+  --couple-bg-orb-a: rgba(134, 101, 107, 0.35);
+  --couple-bg-orb-b: rgba(108, 114, 152, 0.31);
+}
+
+.couple-page.couple-bg-starlit-indigo {
+  --couple-bg-page: linear-gradient(135deg, #c8cfe3 0%, #cdd2e7 100%);
+  --couple-bg-orb-a: rgba(104, 118, 177, 0.36);
+  --couple-bg-orb-b: rgba(92, 104, 162, 0.32);
 }
