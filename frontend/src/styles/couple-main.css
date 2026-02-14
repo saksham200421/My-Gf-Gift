@@ -301,25 +301,6 @@
   color: var(--ink-600);
 }
 
-.message-timeline {
-  display: grid;
-  gap: 8px;
-}
-
-.message-timeline > div {
-  border: 1px solid rgba(31, 42, 72, 0.12);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 10px;
-  display: grid;
-  gap: 4px;
-}
-
-.message-timeline strong {
-  color: var(--ink-900);
-  font-size: 13px;
-}
-
 .message-card,
 .message-card * {
   text-align: left;
@@ -529,6 +510,11 @@
   background-position: center;
   object-fit: cover;
   object-position: center;
+}
+
+.dash-mini-gallery-video {
+  background: #111;
+  object-fit: contain;
 }
 
 .dash-links-grid {

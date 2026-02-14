@@ -17,8 +17,16 @@ import {
 } from "../utils/api";
 import LoveRunnerGame from "../components/LoveRunnerGame";
 
-const dashboardGalleryModules = import.meta.glob(
+const dashboardGalleryImageModules = import.meta.glob(
   "../assets/gallery-media/*.{png,jpg,jpeg,webp,avif,gif}",
+  {
+    eager: true,
+    import: "default",
+  }
+);
+
+const dashboardGalleryVideoModules = import.meta.glob(
+  "../assets/gallery-media/*.{mp4,webm,ogg,mov,m4v}",
   {
     eager: true,
     import: "default",
@@ -63,7 +71,78 @@ const sparkIdeas = [
   "Make tea/coffee for each other and swap playlists.",
   "Recreate your first message in person dramatically.",
   "Three gratitude lines before sleeping tonight.",
+  "Pick one old photo and recreate that moment today.",
+  "2-song dance break in your room with no phones.",
+  "Plan a 15-minute dessert run and rate it together.",
+  "Say one thing you admire and one thing you miss.",
+  "Write tiny notes and exchange them after dinner.",
+  "Take turns picking one surprise task for each other.",
 ];
+
+const thoughtPrompts = [
+  "Today I want us to be softer with each other.",
+  "No ego day: hug first, argue later.",
+  "I want more laughter with you tonight.",
+  "Let’s protect our peace and talk with love.",
+  "You are my calm place, even on messy days.",
+  "Today I choose us, no matter how busy life gets.",
+];
+
+const calmRewritePrompts = [
+  "I need 5 mins and then a hug.",
+  "I felt hurt; can we talk gently for 10 mins?",
+  "I need reassurance right now, not distance.",
+  "Let’s reset this with one honest conversation.",
+  "I’m upset, but I still want us on the same team.",
+  "Can we pause and start again with softer words?",
+];
+
+const gratitudeTemplates = [
+  "Thank you for being patient with me today.",
+  "I love how you make ordinary moments feel special.",
+  "Thank you for listening even when I’m complicated.",
+  "You make me feel chosen every single day.",
+  "I appreciate how you show up for us consistently.",
+  "Thank you for being my comfort and my chaos partner.",
+];
+
+const bucketSpinThoughts = [
+  "One selfie + one hug challenge in the next 5 mins.",
+  "Share one hidden dream you haven’t said out loud.",
+  "No-phone cuddles for 15 mins and just talk.",
+  "Give 3 compliments each without repeating words.",
+  "Play one song and slow dance till it ends.",
+  "Plan a tiny surprise for each other before sleep.",
+];
+
+const datePlanSuggestionsByBudget = {
+  low: [
+    "budget date: roadside chai + long walk + one candid photo.",
+    "budget date: home snacks + playlist swap + balcony talk.",
+    "budget date: sunset walk + ice cream + one voice note each.",
+  ],
+  mid: [
+    "budget date: cafe hop + photo challenge + cozy chat.",
+    "budget date: movie + dessert + memory quiz.",
+    "budget date: bowling/arcade + street food + random gift under ₹300.",
+  ],
+  high: [
+    "budget date: fine dinner + handwritten note exchange.",
+    "budget date: spa + dinner + moonlight drive.",
+    "budget date: staycation evening + room decor surprise.",
+  ],
+};
+
+const smallWinTemplates = [
+  "Our day rating: {stars}/5 because we still showed up for each other.",
+  "Win {stars}/5: we listened first and reacted later.",
+  "{stars}/5 today — tiny efforts, big love.",
+  "We earned {stars}/5 for choosing kindness in small moments.",
+  "{stars}/5 because we stayed connected even when busy.",
+  "{stars}/5: imperfect day, perfect team.",
+];
+
+const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
 
 const dashboardThemeOptions = [
   { id: "soft-blush", label: "Soft Blush" },
@@ -146,17 +225,24 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   });
   const [youtubePlaybackUrl, setYoutubePlaybackUrl] = useState("");
   const [miniGalleryIndex, setMiniGalleryIndex] = useState(0);
+  const [miniGalleryVideoDurations, setMiniGalleryVideoDurations] = useState({});
   const [dashboardTheme, setDashboardTheme] = useState("soft-blush");
   const [dashboardBackgroundTheme, setDashboardBackgroundTheme] = useState("rose-glow");
   const audioRef = useRef(null);
 
   const dashboardGalleryPreview = useMemo(() => {
-    const images = Object.values(dashboardGalleryModules).filter(Boolean);
-    return images;
+    const images = Object.values(dashboardGalleryImageModules)
+      .filter(Boolean)
+      .map((src) => ({ type: "image", src }));
+    const videos = Object.values(dashboardGalleryVideoModules)
+      .filter(Boolean)
+      .map((src) => ({ type: "video", src }));
+
+    return [...images, ...videos];
   }, []);
 
   const activeDashboardMedia =
-    dashboardGalleryPreview[miniGalleryIndex % Math.max(dashboardGalleryPreview.length, 1)] || "";
+    dashboardGalleryPreview[miniGalleryIndex % Math.max(dashboardGalleryPreview.length, 1)] || null;
 
   useEffect(() => {
     fetchDashboard(authToken)
@@ -180,14 +266,41 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       return undefined;
     }
 
-    const interval = window.setInterval(() => {
+    const activeMedia =
+      dashboardGalleryPreview[miniGalleryIndex % Math.max(dashboardGalleryPreview.length, 1)] ||
+      null;
+
+    const delay =
+      activeMedia?.type === "video"
+        ? miniGalleryVideoDurations[activeMedia.src] || 9000
+        : 5200;
+
+    const timeout = window.setTimeout(() => {
       setMiniGalleryIndex((prev) => (prev + 1) % dashboardGalleryPreview.length);
-    }, 5200);
+    }, delay);
 
     return () => {
-      window.clearInterval(interval);
+      window.clearTimeout(timeout);
     };
-  }, [dashboardGalleryPreview]);
+  }, [dashboardGalleryPreview, miniGalleryIndex, miniGalleryVideoDurations]);
+
+  const handleMiniGalleryVideoMetadata = (event, src) => {
+    const durationSeconds = Number(event.currentTarget?.duration || 0);
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+      return;
+    }
+
+    const durationMs = Math.max(2500, Math.round(durationSeconds * 1000) + 250);
+    setMiniGalleryVideoDurations((prev) => {
+      if (prev[src] === durationMs) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [src]: durationMs,
+      };
+    });
+  };
 
   useEffect(() => {
     const previousBodyBackground = document.body.style.background;
@@ -585,6 +698,44 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     }
   };
 
+  const applyThoughtPrompt = async () => {
+    const nextThought = pickRandom(thoughtPrompts);
+    setDashboard((prev) => ({ ...prev, thoughtToday: nextThought }));
+    await patchDashboard({ thoughtToday: nextThought });
+  };
+
+  const applyCalmRewrite = async () => {
+    const nextReason = pickRandom(calmRewritePrompts);
+    setDashboard((prev) => ({ ...prev, madReason: nextReason }));
+    await patchDashboard({ madReason: nextReason });
+  };
+
+  const applyGratitudeTemplate = async () => {
+    const nextTemplate = pickRandom(gratitudeTemplates);
+    setDashboard((prev) => ({ ...prev, gratitudeNote: nextTemplate }));
+    await patchDashboard({ gratitudeNote: nextTemplate });
+  };
+
+  const applyDatePlanSuggestion = async () => {
+    const pool = datePlanSuggestionsByBudget[datePlanBudget] || datePlanSuggestionsByBudget.low;
+    const nextPlan = `${datePlanTime} ${pickRandom(pool)}`;
+    setDashboard((prev) => ({ ...prev, datePlan: nextPlan }));
+    await patchDashboard({ datePlan: nextPlan });
+  };
+
+  const applySmallWinSuggestion = async () => {
+    const template = pickRandom(smallWinTemplates);
+    const nextSmallWin = template.replace("{stars}", String(winStars));
+    setDashboard((prev) => ({ ...prev, smallWin: nextSmallWin }));
+    await patchDashboard({ smallWin: nextSmallWin });
+  };
+
+  const applyBucketSpin = async () => {
+    const nextThought = pickRandom(bucketSpinThoughts);
+    setDashboard((prev) => ({ ...prev, thoughtToday: nextThought }));
+    await patchDashboard({ thoughtToday: nextThought });
+  };
+
   return (
     <main
       className={`couple-page couple-theme-${dashboardTheme} couple-bg-${dashboardBackgroundTheme}`}
@@ -872,12 +1023,23 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         <div className="couple-card">
           <h2>Spark Idea Jar</h2>
           <p>{sparkIdea}</p>
-          <button
-            type="button"
-            onClick={() => setSparkIdea(sparkIdeas[Math.floor(Math.random() * sparkIdeas.length)])}
-          >
-            New Spark
-          </button>
+          <div className="inline-actions">
+            <button
+              type="button"
+              onClick={() => setSparkIdea(pickRandom(sparkIdeas))}
+            >
+              New Spark
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setDashboard((prev) => ({ ...prev, datePlan: sparkIdea }));
+                await patchDashboard({ datePlan: sparkIdea });
+              }}
+            >
+              Use in Date Plan
+            </button>
+          </div>
         </div>
 
         <div className="couple-card">
@@ -940,11 +1102,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             </span>
             <button
               type="button"
-              onClick={() => {
-                const starter = "Today I want us to be softer with each other.";
-                setDashboard((prev) => ({ ...prev, thoughtToday: starter }));
-                patchDashboard({ thoughtToday: starter });
-              }}
+              onClick={applyThoughtPrompt}
             >
               Use prompt
             </button>
@@ -964,11 +1122,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
           <div className="inline-actions">
             <button
               type="button"
-              onClick={() => {
-                const calmVersion = "I need 5 mins and then a hug.";
-                setDashboard((prev) => ({ ...prev, madReason: calmVersion }));
-                patchDashboard({ madReason: calmVersion });
-              }}
+              onClick={applyCalmRewrite}
             >
               Calm rewrite
             </button>
@@ -996,11 +1150,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
           />
           <button
             type="button"
-            onClick={() => {
-              const template = "Thank you for being patient with me today.";
-              setDashboard((prev) => ({ ...prev, gratitudeNote: template }));
-              patchDashboard({ gratitudeNote: template });
-            }}
+            onClick={applyGratitudeTemplate}
           >
             Insert template
           </button>
@@ -1042,11 +1192,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             </label>
             <button
               type="button"
-              onClick={() => {
-                const suggestion = `${datePlanTime} ${datePlanBudget}-budget date: coffee + walk + photos.`;
-                setDashboard((prev) => ({ ...prev, datePlan: suggestion }));
-                patchDashboard({ datePlan: suggestion });
-              }}
+              onClick={applyDatePlanSuggestion}
             >
               Suggest plan
             </button>
@@ -1076,11 +1222,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             </label>
             <button
               type="button"
-              onClick={() => {
-                const line = `Our day rating: ${winStars}/5 because we still showed up for each other.`;
-                setDashboard((prev) => ({ ...prev, smallWin: line }));
-                patchDashboard({ smallWin: line });
-              }}
+              onClick={applySmallWinSuggestion}
             >
               Generate win note
             </button>
@@ -1089,50 +1231,27 @@ function CoupleMain({ authToken, authUser, onLogout }) {
 
         <div className="couple-card">
           <h2>Couple Bucket Spins</h2>
-          <p>Tap once and instantly pick a tiny romantic action.</p>
-          <div className="chip-row">
-            <button
-              type="button"
-              onClick={() => setDashboard((prev) => ({ ...prev, thoughtToday: "One selfie + one hug challenge in the next 5 mins." }))}
-            >
-              Selfie + Hug
+          <p>Tap spin to get a fresh romantic challenge and save it instantly.</p>
+          <div className="inline-actions">
+            <button type="button" onClick={applyBucketSpin}>
+              Spin Suggestion
             </button>
             <button
               type="button"
-              onClick={() => setDashboard((prev) => ({ ...prev, thoughtToday: "Share one secret crush-detail about each other today." }))}
+              onClick={async () => {
+                const nextGratitude = pickRandom(gratitudeTemplates);
+                setDashboard((prev) => ({ ...prev, gratitudeNote: nextGratitude }));
+                await patchDashboard({ gratitudeNote: nextGratitude });
+              }}
             >
-              Secret Detail
+              Spin Appreciation
             </button>
             <button
               type="button"
-              onClick={() => setDashboard((prev) => ({ ...prev, thoughtToday: "Plan a 20-minute no-phone date corner tonight." }))}
+              onClick={applyDatePlanSuggestion}
             >
-              No-phone Date
+              Spin Date Plan
             </button>
-          </div>
-          <button
-            type="button"
-            onClick={() => patchDashboard({ thoughtToday: dashboard.thoughtToday })}
-          >
-            Save To Thoughts
-          </button>
-        </div>
-
-        <div className="couple-card">
-          <h2>Memory Spark Timeline</h2>
-          <div className="message-timeline">
-            <div>
-              <strong>First memory</strong>
-              <p>{dashboard.gratitudeNote?.trim() || "Add your first sweet memory in appreciation box."}</p>
-            </div>
-            <div>
-              <strong>Today’s vibe</strong>
-              <p>{dashboard.moodToday?.trim() || "Set today’s mood on the left panel."}</p>
-            </div>
-            <div>
-              <strong>Next date idea</strong>
-              <p>{dashboard.datePlan?.trim() || "Drop a mini date plan to keep the streak alive."}</p>
-            </div>
           </div>
         </div>
 
@@ -1174,15 +1293,33 @@ function CoupleMain({ authToken, authUser, onLogout }) {
           <h3>Mini Gallery</h3>
           {activeDashboardMedia ? (
             <div className="dash-mini-gallery-single">
-              <img
-                key={activeDashboardMedia}
-                className="dash-mini-gallery-media"
-                src={activeDashboardMedia}
-                alt="Gallery slideshow preview"
-              />
+              {activeDashboardMedia.type === "video" ? (
+                <video
+                  key={activeDashboardMedia.src}
+                  className="dash-mini-gallery-media dash-mini-gallery-video"
+                  src={activeDashboardMedia.src}
+                  autoPlay
+                  muted
+                  playsInline
+                  controls
+                  onLoadedMetadata={(event) =>
+                    handleMiniGalleryVideoMetadata(event, activeDashboardMedia.src)
+                  }
+                  onEnded={() => {
+                    setMiniGalleryIndex((prev) => (prev + 1) % dashboardGalleryPreview.length);
+                  }}
+                />
+              ) : (
+                <img
+                  key={activeDashboardMedia.src}
+                  className="dash-mini-gallery-media"
+                  src={activeDashboardMedia.src}
+                  alt="Gallery slideshow preview"
+                />
+              )}
             </div>
           ) : (
-            <p>Add images to gallery to show slideshow preview here.</p>
+            <p>Add images/videos to gallery to show slideshow preview here.</p>
           )}
           <button type="button" onClick={() => navigate("/gallery")}>
             Open Full Gallery
