@@ -5,6 +5,7 @@ import {
   deleteDashboardTodo,
   fetchLatestSongs,
   fetchDashboard,
+  resolveYouTubeSong,
   searchSongs,
   searchPlace,
   toggleDashboardDate,
@@ -42,6 +43,10 @@ const gameFallbackPrompts = [
   "Guess each other’s mood from one emoji only.",
 ];
 
+const isLikelyYouTubeUrl = (value) =>
+  /^https?:\/\//i.test(value) &&
+  /(youtube\.com|youtu\.be|music\.youtube\.com)/i.test(value);
+
 function CoupleMain({ authToken, authUser, onLogout }) {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(emptyDashboard);
@@ -69,11 +74,19 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [songsError, setSongsError] = useState("");
   const [activePreviewId, setActivePreviewId] = useState(null);
   const [previewLoadingId, setPreviewLoadingId] = useState(null);
+  const [youtubeInput, setYoutubeInput] = useState("");
+  const [youtubeData, setYoutubeData] = useState(null);
+  const [youtubeLoading, setYoutubeLoading] = useState(false);
+  const [youtubeError, setYoutubeError] = useState("");
   const audioRef = useRef(null);
 
   useEffect(() => {
     fetchDashboard(authToken)
-      .then((payload) => setDashboard(payload.dashboard || emptyDashboard))
+      .then((payload) => {
+        const nextDashboard = payload.dashboard || emptyDashboard;
+        setDashboard(nextDashboard);
+        setYoutubeInput(nextDashboard.songPick || "");
+      })
       .catch(() => setDashboard(emptyDashboard));
   }, [authToken]);
 
@@ -286,6 +299,69 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     }
   };
 
+  const handleApplyYouTubeSong = async () => {
+    const rawUrl = youtubeInput.trim();
+    if (!rawUrl) {
+      setYoutubeError("Paste a YouTube link first.");
+      return;
+    }
+
+    if (!isLikelyYouTubeUrl(rawUrl)) {
+      setYoutubeError("Use a valid YouTube video URL.");
+      return;
+    }
+
+    setYoutubeLoading(true);
+    setYoutubeError("");
+    try {
+      const payload = await resolveYouTubeSong(authToken, rawUrl);
+      const nextData = {
+        videoId: payload.videoId,
+        watchUrl: payload.watchUrl,
+        embedUrl: payload.embedUrl,
+      };
+      setYoutubeData(nextData);
+      setDashboard((prev) => ({ ...prev, songPick: nextData.watchUrl }));
+      await patchDashboard({ songPick: nextData.watchUrl });
+    } catch (error) {
+      setYoutubeData(null);
+      setYoutubeError(error.message || "Could not resolve this YouTube link.");
+    } finally {
+      setYoutubeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const savedSong = dashboard.songPick?.trim();
+    if (!savedSong || !isLikelyYouTubeUrl(savedSong)) {
+      setYoutubeData(null);
+      return;
+    }
+
+    let active = true;
+    resolveYouTubeSong(authToken, savedSong)
+      .then((payload) => {
+        if (!active) {
+          return;
+        }
+        setYoutubeData({
+          videoId: payload.videoId,
+          watchUrl: payload.watchUrl,
+          embedUrl: payload.embedUrl,
+        });
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+        setYoutubeData(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authToken, dashboard.songPick]);
+
   const handleSearchPlace = async () => {
     const query = placeQuery.trim() || dashboard.wannaGoTo?.trim();
     if (!query) {
@@ -393,8 +469,31 @@ function CoupleMain({ authToken, authUser, onLogout }) {
               setDashboard((prev) => ({ ...prev, songPick: event.target.value }))
             }
             onBlur={() => patchDashboard({ songPick: dashboard.songPick })}
-            placeholder="Song title or link"
+            placeholder="Song title or YouTube link"
           />
+          <div className="todo-input-row">
+            <input
+              value={youtubeInput}
+              onChange={(event) => setYoutubeInput(event.target.value)}
+              placeholder="Paste YouTube link to stream"
+            />
+            <button type="button" onClick={handleApplyYouTubeSong} disabled={youtubeLoading}>
+              {youtubeLoading ? "Linking..." : "Play from YouTube"}
+            </button>
+          </div>
+          {youtubeError ? <p>{youtubeError}</p> : null}
+          {youtubeData ? (
+            <div className="youtube-player-card">
+              <iframe
+                className="youtube-player-frame"
+                src={youtubeData.embedUrl}
+                title="Selected YouTube song"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                loading="lazy"
+              />
+            </div>
+          ) : null}
           <div className="todo-input-row">
             <input
               value={songSearchQuery}

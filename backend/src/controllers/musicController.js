@@ -135,7 +135,69 @@ async function latestSongs(req, res) {
   }
 }
 
+function normalizeYouTubeUrl(rawUrl) {
+  if (!rawUrl) {
+    return null;
+  }
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(String(rawUrl).trim());
+  } catch {
+    return null;
+  }
+
+  const host = parsedUrl.hostname.toLowerCase().replace(/^www\./, "");
+  const pathSegments = parsedUrl.pathname.split("/").filter(Boolean);
+
+  let videoId = "";
+
+  if (host === "youtu.be") {
+    videoId = pathSegments[0] || "";
+  } else if (
+    host === "youtube.com" ||
+    host === "m.youtube.com" ||
+    host === "music.youtube.com"
+  ) {
+    if (parsedUrl.pathname === "/watch") {
+      videoId = parsedUrl.searchParams.get("v") || "";
+    } else if (pathSegments[0] === "shorts" || pathSegments[0] === "embed") {
+      videoId = pathSegments[1] || "";
+    }
+  }
+
+  if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+    return null;
+  }
+
+  return {
+    videoId,
+    watchUrl: `https://www.youtube.com/watch?v=${videoId}`,
+    embedUrl: `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1`,
+  };
+}
+
+async function resolveYouTubeLink(req, res) {
+  const rawUrl = String(req.query.url || "").trim();
+
+  if (!rawUrl) {
+    return res.status(400).json({ message: "YouTube URL is required" });
+  }
+
+  const resolved = normalizeYouTubeUrl(rawUrl);
+  if (!resolved) {
+    return res.status(400).json({ message: "Enter a valid YouTube video URL" });
+  }
+
+  return res.json({
+    videoId: resolved.videoId,
+    watchUrl: resolved.watchUrl,
+    embedUrl: resolved.embedUrl,
+  });
+}
+
 module.exports = {
   searchSongs,
   latestSongs,
+  resolveYouTubeLink,
 };

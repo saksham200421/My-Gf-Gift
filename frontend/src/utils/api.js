@@ -148,3 +148,10 @@ export async function searchSongs(token, query, limit = 10) {
     }
   );
 }
+
+export async function resolveYouTubeSong(token, url) {
+  return apiRequest(`/api/music/resolve-youtube?url=${encodeURIComponent(url)}`, {
+    method: "GET",
+    token,
+  });
+}

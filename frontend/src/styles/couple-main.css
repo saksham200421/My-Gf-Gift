@@ -378,6 +378,20 @@
   align-items: center;
 }
 
+.youtube-player-card {
+  border: 1px solid rgba(31, 42, 72, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.youtube-player-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  display: block;
+}
+
 .love-game-wrap {
   display: grid;
   gap: 8px;
