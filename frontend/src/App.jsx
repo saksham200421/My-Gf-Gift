@@ -1,6 +1,7 @@
 import "./App.css";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import CoupleMain from "./pages/CoupleMain";
 import Gallery from "./pages/Gallery";
 import Hub from "./pages/Hub";
@@ -65,6 +66,7 @@ function App() {
 
         <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} />
       </Routes>
+      <Analytics />
     </div>
   );
 }
