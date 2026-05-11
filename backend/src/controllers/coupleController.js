@@ -1,4 +1,5 @@
 const { createInviteForUser, getCoupleMembers, joinCoupleByInvite, resolveCoupleForUser } = require("../services/coupleService");
+const { isValidEmail, normalizeInput } = require("../utils/validation");
 
 function normalizeTimezone(value) {
   return String(value || "UTC").trim().slice(0, 80) || "UTC";
@@ -72,9 +73,13 @@ async function getCoupleStatus(req, res) {
 }
 
 async function createInvite(req, res) {
-  const partnerEmail = String(req.body?.partnerEmail || "").trim().toLowerCase();
+  const partnerEmail = normalizeInput(req.body?.partnerEmail, 320).toLowerCase();
   if (!partnerEmail) {
     return res.status(400).json({ message: "partnerEmail is required" });
+  }
+
+  if (!isValidEmail(partnerEmail)) {
+    return res.status(400).json({ message: "Enter a valid partner email address" });
   }
 
   try {

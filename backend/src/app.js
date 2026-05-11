@@ -12,29 +12,14 @@ const exploreRouter = require("./routes/explore");
 const musicRouter = require("./routes/music");
 const coupleRouter = require("./routes/couple");
 const { requireAuthForHtml } = require("./middleware/auth");
+const { applySecurityMiddleware } = require("./middleware/security");
+const { notFoundHandler, errorHandler } = require("./middleware/errorHandlers");
+const { buildCorsOptions } = require("./config/security");
 
 const app = express();
 
-const allowedOrigins = process.env.FRONTEND_ORIGIN
-	? process.env.FRONTEND_ORIGIN.split(",")
-			.map((origin) => origin.trim())
-			.filter(Boolean)
-	: null;
-
-app.use(
-	cors({
-		origin: (origin, callback) => {
-			if (!allowedOrigins) {
-				return callback(null, true);
-			}
-			if (!origin || allowedOrigins.includes(origin)) {
-				return callback(null, true);
-			}
-			return callback(new Error("Not allowed by CORS"));
-		},
-	})
-);
-app.use(express.json());
+applySecurityMiddleware(app);
+app.use(cors(buildCorsOptions()));
 
 const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
@@ -50,5 +35,7 @@ app.use("/api/dashboard", dashboardRouter);
 app.use("/api/explore", exploreRouter);
 app.use("/api/music", musicRouter);
 app.use("/api/couple", coupleRouter);
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 module.exports = app;

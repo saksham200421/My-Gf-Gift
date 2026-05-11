@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 
 const { verifyAuthToken } = require("./utils/jwt");
 const { resolveCoupleForUser } = require("./services/coupleService");
+const { buildCorsOptions } = require("./config/security");
 
 function serializePresenceMembers(setValue) {
   return Array.from(setValue || []);
@@ -9,10 +10,7 @@ function serializePresenceMembers(setValue) {
 
 function setupSocketServer(httpServer, app) {
   const io = new Server(httpServer, {
-    cors: {
-      origin: true,
-      credentials: true,
-    },
+    cors: buildCorsOptions(),
   });
 
   const presenceStore = new Map();
