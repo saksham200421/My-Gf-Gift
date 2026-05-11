@@ -33,38 +33,42 @@ function setupSocketServer(httpServer, app) {
   });
 
   io.on("connection", async (socket) => {
-    const userId = socket.auth?.userId;
-    if (!userId) {
-      socket.disconnect(true);
-      return;
-    }
-
-    const { couple } = await resolveCoupleForUser(userId, { createIfMissing: false });
-    const roomId = couple ? `couple:${couple._id.toString()}` : `user:${userId}`;
-    socket.join(roomId);
-
-    const roomUsers = presenceStore.get(roomId) || new Set();
-    roomUsers.add(userId.toString());
-    presenceStore.set(roomId, roomUsers);
-    io.to(roomId).emit("presence:update", {
-      onlineUsers: serializePresenceMembers(roomUsers),
-    });
-
-    socket.on("disconnect", () => {
-      const onlineNow = presenceStore.get(roomId);
-      if (!onlineNow) {
+    try {
+      const userId = socket.auth?.userId;
+      if (!userId) {
+        socket.disconnect(true);
         return;
       }
-      onlineNow.delete(userId.toString());
-      if (onlineNow.size === 0) {
-        presenceStore.delete(roomId);
-      } else {
-        presenceStore.set(roomId, onlineNow);
-      }
+
+      const { couple } = await resolveCoupleForUser(userId, { createIfMissing: false });
+      const roomId = couple ? `couple:${couple._id.toString()}` : `user:${userId}`;
+      socket.join(roomId);
+
+      const roomUsers = presenceStore.get(roomId) || new Set();
+      roomUsers.add(userId.toString());
+      presenceStore.set(roomId, roomUsers);
       io.to(roomId).emit("presence:update", {
-        onlineUsers: serializePresenceMembers(onlineNow),
+        onlineUsers: serializePresenceMembers(roomUsers),
       });
-    });
+
+      socket.on("disconnect", () => {
+        const onlineNow = presenceStore.get(roomId);
+        if (!onlineNow) {
+          return;
+        }
+        onlineNow.delete(userId.toString());
+        if (onlineNow.size === 0) {
+          presenceStore.delete(roomId);
+        } else {
+          presenceStore.set(roomId, onlineNow);
+        }
+        io.to(roomId).emit("presence:update", {
+          onlineUsers: serializePresenceMembers(onlineNow),
+        });
+      });
+    } catch {
+      socket.disconnect(true);
+    }
   });
 
   return io;

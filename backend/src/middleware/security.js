@@ -63,7 +63,19 @@ function applySecurityMiddleware(app) {
   app.set("trust proxy", 1);
   app.use(
     helmet({
-      contentSecurityPolicy: false,
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          fontSrc: ["'self'", "https:", "data:"],
+          frameAncestors: ["'none'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          objectSrc: ["'none'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          connectSrc: ["'self'", "https:", "wss:", "ws:"],
+        },
+      },
       crossOriginResourcePolicy: { policy: "cross-origin" },
     })
   );
