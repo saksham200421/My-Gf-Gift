@@ -25,7 +25,7 @@ function errorHandler(error, req, res, _next) {
       ? "Internal server error"
       : error?.message || "Internal server error";
 
-  console.error("Unhandled error:", error?.message || error);
+  console.error("Unhandled error:", error?.stack || error?.message || error);
   return res.status(statusCode).json({ message });
 }
 

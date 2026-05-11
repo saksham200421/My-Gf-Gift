@@ -66,7 +66,8 @@ function setupSocketServer(httpServer, app) {
           onlineUsers: serializePresenceMembers(onlineNow),
         });
       });
-    } catch {
+    } catch (error) {
+      console.error("Socket connection setup failed:", error?.message || error);
       socket.disconnect(true);
     }
   });

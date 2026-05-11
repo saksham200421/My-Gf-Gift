@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
-const FALLBACK_SECRET = "dev-super-secret-change-me";
+const FALLBACK_SECRET = crypto.randomBytes(48).toString("hex");
 let hasWarnedAboutFallback = false;
 
 function getJwtSecret() {
