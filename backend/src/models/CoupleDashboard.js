@@ -40,6 +40,17 @@ const specialOccasionSchema = new mongoose.Schema(
 
 const messageHistoryItemSchema = new mongoose.Schema(
   {
+    authorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+    },
+    authorName: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 120,
+    },
     text: {
       type: String,
       required: true,
@@ -119,8 +130,15 @@ const coupleDashboardSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+      index: true,
+    },
+    coupleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Couple",
+      default: null,
       unique: true,
+      sparse: true,
       index: true,
     },
     eatToday: {

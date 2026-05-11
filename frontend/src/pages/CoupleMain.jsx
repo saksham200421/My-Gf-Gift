@@ -1,17 +1,28 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import {
+  addCoupleMilestone,
+  addCoupleReminder,
+  createCoupleInvite,
   addDashboardChatMessage,
   addDashboardTodo,
+  deleteCoupleMilestone,
+  deleteCoupleReminder,
   deleteDashboardOccasion,
   deleteDashboardTodo,
+  fetchCoupleStatus,
   fetchDashboard,
+  getSocketUrl,
+  joinCoupleInvite,
   performDashboardVirtualPetAction,
   resolveYouTubeSong,
   searchSongs,
   searchPlace,
   sendDashboardPing,
   toggleDashboardDate,
+  updateCoupleReminder,
+  updateCoupleTimezone,
   updateDashboardVirtualPetName,
   upsertDashboardOccasion,
   updateDashboardFields,
@@ -334,6 +345,17 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const [miniGalleryVideoDurations, setMiniGalleryVideoDurations] = useState({});
   const [dashboardTheme, setDashboardTheme] = useState("soft-blush");
   const [dashboardBackgroundTheme, setDashboardBackgroundTheme] = useState("rose-glow");
+  const [coupleData, setCoupleData] = useState(null);
+  const [coupleMembers, setCoupleMembers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [partnerEmailDraft, setPartnerEmailDraft] = useState("");
+  const [inviteCodeDraft, setInviteCodeDraft] = useState("");
+  const [sharedTimezoneDraft, setSharedTimezoneDraft] = useState("UTC");
+  const [coupleStatusMessage, setCoupleStatusMessage] = useState("");
+  const [milestoneTitle, setMilestoneTitle] = useState("");
+  const [milestoneDate, setMilestoneDate] = useState("");
+  const [reminderText, setReminderText] = useState("");
+  const [reminderDateTime, setReminderDateTime] = useState("");
   const audioRef = useRef(null);
 
   const dashboardGalleryPreview = useMemo(() => {
@@ -350,10 +372,20 @@ function CoupleMain({ authToken, authUser, onLogout }) {
   const activeDashboardMedia =
     dashboardGalleryPreview[miniGalleryIndex % Math.max(dashboardGalleryPreview.length, 1)] || null;
 
+  const loadCoupleStatus = useCallback(async () => {
+    const payload = await fetchCoupleStatus(authToken);
+    setCoupleData(payload.couple || null);
+    setCoupleMembers(payload.members || []);
+    setOnlineUsers(
+      (payload.presence || []).filter((item) => item.online).map((item) => item.userId)
+    );
+    setSharedTimezoneDraft(payload.couple?.sharedTimezone || "UTC");
+  }, [authToken]);
+
   useEffect(() => {
-    fetchDashboard(authToken)
-      .then((payload) => {
-        const nextDashboard = payload.dashboard || emptyDashboard;
+    Promise.all([fetchDashboard(authToken), loadCoupleStatus()])
+      .then(([dashboardPayload]) => {
+        const nextDashboard = dashboardPayload.dashboard || emptyDashboard;
         setDashboard(nextDashboard);
         setPetNameDraft(nextDashboard.virtualPet?.name || "Mochi");
         setYoutubeInput(nextDashboard.songPick || "");
@@ -361,6 +393,31 @@ function CoupleMain({ authToken, authUser, onLogout }) {
         setDashboardBackgroundTheme(nextDashboard.dashboardBackgroundTheme || "rose-glow");
       })
       .catch(() => setDashboard(emptyDashboard));
+  }, [authToken, loadCoupleStatus]);
+
+  useEffect(() => {
+    const socket = io(getSocketUrl(), {
+      auth: { token: authToken },
+      transports: ["websocket"],
+    });
+
+    socket.on("presence:update", (payload) => {
+      setOnlineUsers(Array.isArray(payload?.onlineUsers) ? payload.onlineUsers : []);
+    });
+
+    socket.on("chat:new-message", (message) => {
+      setDashboard((prev) => {
+        const list = Array.isArray(prev.messageHistory) ? prev.messageHistory : [];
+        return {
+          ...prev,
+          messageHistory: [...list, message].slice(-300),
+        };
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [authToken]);
 
   useEffect(() => {
@@ -885,6 +942,123 @@ function CoupleMain({ authToken, authUser, onLogout }) {
     await patchDashboard({ smallWin: nextSmallWin });
   };
 
+  const handleCreateInvite = async () => {
+    const partnerEmail = partnerEmailDraft.trim().toLowerCase();
+    if (!partnerEmail) {
+      setCoupleStatusMessage("Enter your partner email first.");
+      return;
+    }
+
+    try {
+      await createCoupleInvite(authToken, partnerEmail);
+      await loadCoupleStatus();
+      setCoupleStatusMessage("Invite generated. Share the code with your partner.");
+    } catch (error) {
+      setCoupleStatusMessage(error.message || "Could not create invite.");
+    }
+  };
+
+  const handleJoinInvite = async () => {
+    const inviteCode = inviteCodeDraft.trim();
+    if (!inviteCode) {
+      setCoupleStatusMessage("Enter an invite code first.");
+      return;
+    }
+
+    try {
+      await joinCoupleInvite(authToken, inviteCode);
+      await loadCoupleStatus();
+      setCoupleStatusMessage("Joined your couple space 💞");
+      setInviteCodeDraft("");
+    } catch (error) {
+      setCoupleStatusMessage(error.message || "Could not join invite.");
+    }
+  };
+
+  const handleSaveTimezone = async () => {
+    try {
+      await updateCoupleTimezone(authToken, sharedTimezoneDraft.trim() || "UTC");
+      await loadCoupleStatus();
+      setCoupleStatusMessage("Shared timezone updated.");
+    } catch (error) {
+      setCoupleStatusMessage(error.message || "Could not update timezone.");
+    }
+  };
+
+  const handleAddMilestone = async () => {
+    const title = milestoneTitle.trim();
+    if (!title || !milestoneDate) {
+      setCoupleStatusMessage("Milestone title and date are required.");
+      return;
+    }
+
+    try {
+      await addCoupleMilestone(authToken, {
+        title,
+        eventAt: new Date(milestoneDate).toISOString(),
+        timezone: sharedTimezoneDraft || "UTC",
+      });
+      await loadCoupleStatus();
+      setMilestoneTitle("");
+      setMilestoneDate("");
+      setCoupleStatusMessage("Milestone saved.");
+    } catch (error) {
+      setCoupleStatusMessage(error.message || "Could not save milestone.");
+    }
+  };
+
+  const handleDeleteMilestone = async (milestoneId) => {
+    try {
+      await deleteCoupleMilestone(authToken, milestoneId);
+      await loadCoupleStatus();
+    } catch {
+      return;
+    }
+  };
+
+  const handleAddReminder = async () => {
+    const text = reminderText.trim();
+    if (!text || !reminderDateTime) {
+      setCoupleStatusMessage("Reminder text and date-time are required.");
+      return;
+    }
+
+    try {
+      await addCoupleReminder(authToken, {
+        text,
+        remindAt: new Date(reminderDateTime).toISOString(),
+        timezone: sharedTimezoneDraft || "UTC",
+      });
+      await loadCoupleStatus();
+      setReminderText("");
+      setReminderDateTime("");
+      setCoupleStatusMessage("Reminder added.");
+    } catch (error) {
+      setCoupleStatusMessage(error.message || "Could not add reminder.");
+    }
+  };
+
+  const handleToggleReminder = async (reminderId, done) => {
+    try {
+      await updateCoupleReminder(authToken, reminderId, done);
+      await loadCoupleStatus();
+    } catch {
+      return;
+    }
+  };
+
+  const handleDeleteReminder = async (reminderId) => {
+    try {
+      await deleteCoupleReminder(authToken, reminderId);
+      await loadCoupleStatus();
+    } catch {
+      return;
+    }
+  };
+
+  const partner = coupleMembers.find((member) => member.id !== authUser?.id);
+  const isPartnerOnline = partner ? onlineUsers.includes(partner.id) : false;
+
   return (
     <main
       className={`couple-page couple-theme-${dashboardTheme} couple-bg-${dashboardBackgroundTheme}`}
@@ -1067,6 +1241,124 @@ function CoupleMain({ authToken, authUser, onLogout }) {
       </section>
 
       <section className="couple-col couple-col-main">
+        <div className="couple-card">
+          <h2>LDR Couple Space</h2>
+          <p>
+            {partner
+              ? `${partner.name || "Partner"} is ${isPartnerOnline ? "online" : "offline"}`
+              : "Invite your partner to unlock shared couple mode."}
+          </p>
+          {coupleData?.inviteCode ? (
+            <p>
+              Invite code: <strong>{coupleData.inviteCode}</strong>
+            </p>
+          ) : null}
+          <div className="todo-input-row">
+            <input
+              value={partnerEmailDraft}
+              onChange={(event) => setPartnerEmailDraft(event.target.value)}
+              placeholder="Partner email for invite"
+            />
+            <button type="button" onClick={handleCreateInvite}>
+              Create invite
+            </button>
+          </div>
+          <div className="todo-input-row">
+            <input
+              value={inviteCodeDraft}
+              onChange={(event) => setInviteCodeDraft(event.target.value)}
+              placeholder="Join using invite code"
+            />
+            <button type="button" onClick={handleJoinInvite}>
+              Join
+            </button>
+          </div>
+          <div className="todo-input-row">
+            <input
+              value={sharedTimezoneDraft}
+              onChange={(event) => setSharedTimezoneDraft(event.target.value)}
+              placeholder="Shared timezone (e.g. Asia/Kolkata)"
+            />
+            <button type="button" onClick={handleSaveTimezone}>
+              Save timezone
+            </button>
+          </div>
+          {coupleStatusMessage ? <p>{coupleStatusMessage}</p> : null}
+        </div>
+
+        <div className="couple-card">
+          <h2>Shared milestones</h2>
+          <div className="todo-input-row">
+            <input
+              value={milestoneTitle}
+              onChange={(event) => setMilestoneTitle(event.target.value)}
+              placeholder="Milestone title"
+            />
+            <input
+              type="datetime-local"
+              value={milestoneDate}
+              onChange={(event) => setMilestoneDate(event.target.value)}
+            />
+            <button type="button" onClick={handleAddMilestone}>
+              Add
+            </button>
+          </div>
+          {(coupleData?.milestones || []).length ? (
+            (coupleData?.milestones || []).map((item) => (
+              <div className="todo-item" key={item.id}>
+                <span>
+                  {item.title} · {new Date(item.eventAt).toLocaleString()} ·{" "}
+                  {Math.max(0, Math.floor((item.countdownMs || 0) / (1000 * 60 * 60 * 24)))}d left
+                </span>
+                <button type="button" onClick={() => handleDeleteMilestone(item.id)}>
+                  Remove
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No milestones yet.</p>
+          )}
+        </div>
+
+        <div className="couple-card">
+          <h2>Shared reminders</h2>
+          <div className="todo-input-row">
+            <input
+              value={reminderText}
+              onChange={(event) => setReminderText(event.target.value)}
+              placeholder="Reminder text"
+            />
+            <input
+              type="datetime-local"
+              value={reminderDateTime}
+              onChange={(event) => setReminderDateTime(event.target.value)}
+            />
+            <button type="button" onClick={handleAddReminder}>
+              Add
+            </button>
+          </div>
+          {(coupleData?.reminders || []).length ? (
+            (coupleData?.reminders || []).map((item) => (
+              <div className="todo-item" key={item.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(item.done)}
+                    onChange={(event) => handleToggleReminder(item.id, event.target.checked)}
+                  />
+                  {item.text} · {new Date(item.remindAt).toLocaleString()} ·{" "}
+                  {Math.max(0, Math.floor((item.countdownMs || 0) / (1000 * 60)))}m left
+                </label>
+                <button type="button" onClick={() => handleDeleteReminder(item.id)}>
+                  Delete
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No reminders yet.</p>
+          )}
+        </div>
+
         <div className="couple-card">
           <div className="calendar-head">
             <h2>
@@ -1379,6 +1671,7 @@ function CoupleMain({ authToken, authUser, onLogout }) {
             {(dashboard.messageHistory || []).length ? (
               (dashboard.messageHistory || []).map((item, index) => (
                 <div key={`${item.createdAt || "msg"}-${index}`} className="message-item">
+                  {item.authorName ? <strong>{item.authorName}</strong> : null}
                   <p>{item.text}</p>
                   <span>
                     {item.createdAt

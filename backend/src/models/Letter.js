@@ -5,7 +5,13 @@ const letterSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+      index: true,
+    },
+    coupleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Couple",
+      default: null,
       index: true,
     },
     title: {

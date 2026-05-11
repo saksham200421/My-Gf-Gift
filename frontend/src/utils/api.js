@@ -40,6 +40,10 @@ export function buildValentineUrl(token) {
   return `${API_URL}/valentine?token=${encodeURIComponent(token)}`;
 }
 
+export function getSocketUrl() {
+  return API_URL;
+}
+
 export async function loginUser({ username, password }) {
   return apiRequest("/api/auth/login", {
     method: "POST",
@@ -191,6 +195,75 @@ export async function searchSongs(token, query, limit = 10) {
 export async function resolveYouTubeSong(token, url) {
   return apiRequest(`/api/music/resolve-youtube?url=${encodeURIComponent(url)}`, {
     method: "GET",
+    token,
+  });
+}
+
+export async function fetchCoupleStatus(token) {
+  return apiRequest("/api/couple", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function createCoupleInvite(token, partnerEmail) {
+  return apiRequest("/api/couple/invite", {
+    method: "POST",
+    token,
+    body: { partnerEmail },
+  });
+}
+
+export async function joinCoupleInvite(token, inviteCode) {
+  return apiRequest("/api/couple/join", {
+    method: "POST",
+    token,
+    body: { inviteCode },
+  });
+}
+
+export async function updateCoupleTimezone(token, timezone) {
+  return apiRequest("/api/couple/timezone", {
+    method: "PATCH",
+    token,
+    body: { timezone },
+  });
+}
+
+export async function addCoupleMilestone(token, milestone) {
+  return apiRequest("/api/couple/milestones", {
+    method: "POST",
+    token,
+    body: milestone,
+  });
+}
+
+export async function deleteCoupleMilestone(token, milestoneId) {
+  return apiRequest(`/api/couple/milestones/${milestoneId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function addCoupleReminder(token, reminder) {
+  return apiRequest("/api/couple/reminders", {
+    method: "POST",
+    token,
+    body: reminder,
+  });
+}
+
+export async function updateCoupleReminder(token, reminderId, done) {
+  return apiRequest(`/api/couple/reminders/${reminderId}`, {
+    method: "PATCH",
+    token,
+    body: { done },
+  });
+}
+
+export async function deleteCoupleReminder(token, reminderId) {
+  return apiRequest(`/api/couple/reminders/${reminderId}`, {
+    method: "DELETE",
     token,
   });
 }

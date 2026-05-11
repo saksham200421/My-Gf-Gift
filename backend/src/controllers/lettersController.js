@@ -1,4 +1,5 @@
 const Letter = require("../models/Letter");
+const { resolveCoupleForUser } = require("../services/coupleService");
 
 function mapLetter(letter) {
   return {
@@ -12,7 +13,10 @@ function mapLetter(letter) {
 }
 
 async function listLetters(req, res) {
-  const letters = await Letter.find({ userId: req.auth.userId }).sort({ createdAt: -1 });
+  const { couple } = await resolveCoupleForUser(req.auth.userId, { createIfMissing: false });
+  const letters = await Letter.find(couple ? { coupleId: couple._id } : { userId: req.auth.userId }).sort({
+    createdAt: -1,
+  });
   return res.json({ letters: letters.map(mapLetter) });
 }
 
@@ -23,8 +27,11 @@ async function createLetter(req, res) {
     return res.status(400).json({ message: "Title and content are required" });
   }
 
+  const { couple } = await resolveCoupleForUser(req.auth.userId, { createIfMissing: false });
+
   const letter = await Letter.create({
     userId: req.auth.userId,
+    ...(couple ? { coupleId: couple._id } : {}),
     title: title.trim(),
     content: content.trim(),
     date: date?.trim() || "Today",

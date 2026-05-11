@@ -10,6 +10,7 @@ const lettersRouter = require("./routes/letters");
 const dashboardRouter = require("./routes/dashboard");
 const exploreRouter = require("./routes/explore");
 const musicRouter = require("./routes/music");
+const coupleRouter = require("./routes/couple");
 const { requireAuthForHtml } = require("./middleware/auth");
 
 const app = express();
@@ -48,5 +49,6 @@ app.use("/api/letters", lettersRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/explore", exploreRouter);
 app.use("/api/music", musicRouter);
+app.use("/api/couple", coupleRouter);
 
 module.exports = app;

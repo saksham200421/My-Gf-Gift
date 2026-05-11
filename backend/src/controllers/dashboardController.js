@@ -1,6 +1,7 @@
 const CoupleDashboard = require("../models/CoupleDashboard");
 const User = require("../models/User");
 const { sendPingEmail } = require("../utils/email");
+const { resolveCoupleForUser } = require("../services/coupleService");
 
 const allowedDashboardThemes = new Set([
   "soft-blush",
@@ -132,10 +133,12 @@ function applyPetAction(pet, action) {
 }
 
 async function ensureDashboard(userId) {
-  let dashboard = await CoupleDashboard.findOne({ userId });
+  const { couple } = await resolveCoupleForUser(userId, { createIfMissing: false });
+  const query = couple ? { coupleId: couple._id } : { userId };
+  let dashboard = await CoupleDashboard.findOne(query);
 
   if (!dashboard) {
-    dashboard = await CoupleDashboard.create({ userId });
+    dashboard = await CoupleDashboard.create(query);
   }
 
   return dashboard;
@@ -157,6 +160,8 @@ function mapDashboard(dashboard) {
           .slice()
           .sort((first, second) => first.createdAt - second.createdAt)
           .map((message) => ({
+            authorId: message.authorId ? message.authorId.toString() : null,
+            authorName: message.authorName || "",
             text: message.text,
             createdAt: message.createdAt,
           }))
@@ -387,7 +392,15 @@ async function sendPing(req, res) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  const recipient = process.env.PING_NOTIFY_EMAIL || fromUser.email;
+  const { couple } = await resolveCoupleForUser(req.auth.userId, { createIfMissing: false });
+  let recipient = process.env.PING_NOTIFY_EMAIL || fromUser.email;
+  if (couple?.members?.length >= 2) {
+    const partnerId = couple.members.find((memberId) => memberId.toString() !== fromUser._id.toString());
+    const partner = partnerId ? await User.findById(partnerId).select("email") : null;
+    if (partner?.email) {
+      recipient = partner.email;
+    }
+  }
 
   setImmediate(async () => {
     try {
@@ -412,13 +425,32 @@ async function addChatMessage(req, res) {
   }
 
   const dashboard = await ensureDashboard(req.auth.userId);
-  dashboard.messageHistory.push({ text, createdAt: new Date() });
+  const author = await User.findById(req.auth.userId).select("name");
+  const message = {
+    authorId: req.auth.userId,
+    authorName: author?.name || "Partner",
+    text,
+    createdAt: new Date(),
+  };
+  dashboard.messageHistory.push(message);
 
   if (dashboard.messageHistory.length > 300) {
     dashboard.messageHistory = dashboard.messageHistory.slice(-300);
   }
 
   await dashboard.save();
+  const io = req.app.get("io");
+  const roomId = dashboard.coupleId
+    ? `couple:${dashboard.coupleId.toString()}`
+    : `user:${req.auth.userId}`;
+  if (io) {
+    io.to(roomId).emit("chat:new-message", {
+      authorId: message.authorId?.toString?.() || null,
+      authorName: message.authorName,
+      text: message.text,
+      createdAt: message.createdAt,
+    });
+  }
   return res.status(201).json({ dashboard: mapDashboard(dashboard) });
 }
 

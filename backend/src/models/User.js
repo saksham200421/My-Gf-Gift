@@ -19,6 +19,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    coupleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Couple",
+      default: null,
+      index: true,
+    },
+    timezone: {
+      type: String,
+      default: "UTC",
+      trim: true,
+      maxlength: 80,
+    },
   },
   {
     timestamps: true,
